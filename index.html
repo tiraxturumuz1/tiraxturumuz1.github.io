@@ -3,107 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pi Network App</title>
-    <!-- لود کردن SDK رسمی شبکه پای -->
-    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <title>Pi Network Login</title>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
+            min-height: 100vh;
+            background-color: #f4f4f4;
             margin: 0;
-            background-color: #f4f7f6;
-            text-align: center;
-            color: #333;
         }
         .container {
-            background: white;
-            padding: 2rem;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            max-width: 90%;
-            width: 400px;
+            text-align: center;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
         h1 {
-            font-size: 1.5rem;
-            color: #673ab7; /* رنگ بنفش نزدیک به برند پای */
-            margin-bottom: 1.5rem;
+            color: #003366; /* رنگ آبی تیره برای تیتر */
+            margin-bottom: 20px;
         }
         button {
-            background-color: #673ab7;
+            background-color: #007bff;
             color: white;
+            padding: 12px 25px;
             border: none;
-            padding: 12px 24px;
-            font-size: 1rem;
-            border-radius: 8px;
+            border-radius: 5px;
             cursor: pointer;
-            transition: background 0.3s;
-            width: 100%;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
         }
         button:hover {
-            background-color: #512da8;
+            background-color: #0056b3;
+        }
+        p {
+            margin-top: 20px;
+            color: #555;
         }
         #user-info {
-            margin-top: 20px;
-            padding: 10px;
-            border-top: 1px solid #eee;
-            display: none;
+            margin-top: 15px;
+            font-weight: bold;
+            color: #28a745; /* رنگ سبز برای نام کاربری */
         }
-        .logout-btn {
-            background-color: #f44336;
+        #sdk-status {
+            font-size: 12px;
+            color: #6c757d;
             margin-top: 10px;
         }
     </style>
 </head>
 <body>
-
     <div class="container">
-        <!-- متن مورد نظر شما در بالا -->
+        <!-- متن خوش آمدگویی -->
         <h1>Welcome to the decentralized international government.</h1>
 
-        <!-- دکمه اصلی لاگین -->
-        <button id="login-button" onclick="login()">Login with Pi</button>
-
-        <!-- بخش نمایش اطلاعات کاربر پس از لاگین -->
-        <div id="user-info">
-            <p>Welcome, <strong id="username"></strong>!</p>
-            <button class="logout-btn" onclick="logout()">Logout</button>
-        </div>
+        <!-- دکمه لاگین -->
+        <button id="login-button" disabled>Login with Pi</button>
+        <p id="user-info"></p>
+        <p id="sdk-status">Initializing Pi SDK...</p>
     </div>
 
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <script>
-        // مقدار sandbox را اگر در Pi Browser تست می‌کنید روی true یا false بر اساس تنظیمات پورتال بگذارید
-        // معمولاً برای تست اولیه sandbox: true قرار داده می‌شود
-        Pi.init({ version: "2.0", sandbox: true });
-
-        function login() {
-            Pi.authenticate(true, onAuthSuccess, onAuthError);
-        }
+        let loginButton = document.getElementById('login-button');
+        let userInfo = document.getElementById('user-info');
+        let sdkStatus = document.getElementById('sdk-status');
 
         function onAuthSuccess(auth) {
-            console.log("Auth Success:", auth);
-            
-            // پنهان کردن دکمه لاگین و نمایش اطلاعات کاربر
-            document.getElementById('login-button').style.display = 'none';
-            document.getElementById('user-info').style.display = 'block';
-            
-            // نمایش نام کاربری
-            document.getElementById('username').innerText = auth.user.username;
-        }
-
-        function onAuthError(error) {
-            console.error("Auth Error:", error);
-            alert("Login failed: " + error.message);
+            console.log("Authentication successful:", auth);
+            userInfo.textContent = `Logged in as: ${auth.user.username}`;
+            loginButton.textContent = 'Logout';
+            loginButton.onclick = logout;
+            loginButton.disabled = false; // فعال کردن دکمه لاگ اوت
+            sdkStatus.textContent = 'Pi SDK Connected Successfully.';
         }
 
         function logout() {
-            // ساده‌ترین راه برای خروج و ریست کردن وضعیت، ریلود کردن صفحه است
-            location.reload();
+            console.log("Logging out...");
+            // در صورت نیاز به منطق لاگ اوت خاص، اینجا اضافه شود.
+            // معمولاً با ریلود کردن صفحه یا پاک کردن اطلاعات کاربر انجام می‌شود.
+            userInfo.textContent = '';
+            loginButton.textContent = 'Login with Pi';
+            loginButton.onclick = login;
+            loginButton.disabled = true; // غیرفعال کردن دکمه تا SDK آماده شود
+            sdkStatus.textContent = 'Logged out. Re-initializing Pi SDK...';
+            Pi.init({ version: "2.0", sandbox: true }); // مجدداً SDK را اینیت می‌کنیم
         }
-    </script>
 
+        function login() {
+            console.log("Attempting to login...");
+            loginButton.disabled = true; // غیرفعال کردن دکمه هنگام لاگین
+            sdkStatus.textContent = 'Requesting authentication...';
+
+            Pi.authenticate(true, (auth, error) => {
+                if (error) {
+                    console.error("Authentication error:", error);
+                    userInfo.textContent = `Login failed: ${error.message}`;
+                    sdkStatus.textContent = `Error during authentication.`;
+                    loginButton.disabled = false; // فعال کردن مجدد دکمه در صورت خطا
+                    return;
+                }
+                onAuthSuccess(auth);
+            });
+        }
+
+        // تابعی که بعد از آماده شدن SDK فراخوانی می‌شود
+        function onReady() {
+            console.log("Pi SDK is ready.");
+            sdkStatus.textContent = 'Pi SDK Ready. Click Login.';
+            loginButton.disabled = false; // فعال کردن دکمه لاگین
+            loginButton.onclick = login; // تنظیم تابع لاگین به دکمه
+        }
+
+        // تابعی که در صورت قطع شدن اتصال SDK فراخوانی می‌شود
+        function onDisconnected() {
+            console.log("Pi SDK disconnected.");
+            userInfo.textContent = '';
+            loginButton.textContent = 'Login with Pi (SDK Disconnected)';
+            loginButton.disabled = true;
+            sdkStatus.textContent = 'Pi SDK Disconnected. Please refresh or try again.';
+        }
+
+        // مقداردهی اولیه Pi SDK
+        // sandbox: true برای محیط تست پای. اگر در حالت production هستید، false کنید.
+        Pi.init({ version: "2.0", sandbox: true });
+
+        // ثبت event listener ها
+        Pi.onready(onReady);
+        Pi.onclose(onDisconnected); // استفاده از onclose برای قطع شدن اتصال
+
+    </script>
+</body>
+</html>
 </body>
 </html>
