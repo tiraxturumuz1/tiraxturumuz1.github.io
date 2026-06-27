@@ -3,37 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pi Connection Test</title>
+    <title>Pi Decentralized Government</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding-top: 50px; background-color: #f4f4f9; }
-        .container { background: white; padding: 30px; border-radius: 15px; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        #status { font-weight: bold; margin-top: 20px; padding: 15px; border-radius: 8px; }
-        .loading { color: #856404; background-color: #fff3cd; }
-        .success { color: #155724; background-color: #d4edda; }
-        .error { color: #721c24; background-color: #f8d7da; }
-        h1 { color: #333; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding-top: 50px; background-color: #f4f7f6; margin: 0; }
+        .container { background: white; padding: 40px; border-radius: 20px; display: inline-block; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 90%; }
+        h1 { color: #673ab7; font-size: 24px; margin-bottom: 10px; }
+        p { color: #666; }
+        #status { margin-top: 20px; padding: 10px; font-size: 14px; border-radius: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+        
+        /* استایل دکمه لاگین */
+        .login-btn {
+            background-color: #673ab7;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 30px;
+            cursor: pointer;
+            margin-top: 25px;
+            transition: background 0.3s;
+            display: none; /* در ابتدا مخفی است تا SDK لود شود */
+        }
+        .login-btn:hover { background-color: #512da8; }
+        .login-btn:disabled { background-color: #ccc; cursor: not-allowed; }
+
+        #user-info { margin-top: 30px; padding: 20px; border-top: 1px solid #eee; display: none; }
+        .username { font-size: 22px; font-weight: bold; color: #333; }
+        .logout-btn { margin-top: 15px; background: none; border: 1px solid #ff5252; color: #ff5252; padding: 5px 15px; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>Pi Connection Test</h1>
-        <div id="status" class="loading">Initializing Pi SDK...</div>
+        <h1>Welcome to the decentralized international government.</h1>
+        <p>Please log in to access the platform.</p>
+
+        <!-- دکمه لاگین -->
+        <button id="login-button" class="login-btn">Login with Pi</button>
+
+        <!-- بخش نمایش اطلاعات کاربر بعد از لاگین -->
+        <div id="user-info">
+            <p>Welcome back,</p>
+            <div class="username" id="username-display"></div>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+
+        <div id="status">Initializing SDK...</div>
     </div>
 
-    <!-- لود کردن SDK -->
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-    
     <script>
         const statusDiv = document.getElementById('status');
+        const loginButton = document.getElementById('login-button');
+        const userInfoDiv = document.getElementById('user-info');
+        const usernameDisplay = document.getElementById('username-display');
 
+        // تابع مدیریت وضعیت پیام‌ها
         function updateStatus(msg, type) {
             statusDiv.textContent = msg;
             statusDiv.className = type;
         }
 
-        // تابع اصلی برای مدیریت شروع کار
-        async function startPi() {
+        // تابع خروج
+        function logout() {
+            // برای ساده‌ترین حالت، صفحه را رفرش می‌کنیم تا نشست قبلی پاک شود
+            location.reload();
+        }
+
+        async function initApp() {
             try {
                 // ۱. مقداردهی اولیه
                 Pi.init({ 
@@ -42,36 +81,46 @@
                     appId: "pidao-pi-2uk8" 
                 });
 
-                // ۲. استفاده از متد صحیح برای انتظار آماده شدن (در نسخه جدید)
-                // بجای Pi.onready، از ساختار زیر استفاده می‌کنیم که امن‌تر است
-                
-                console.log("SDK Initialized. Checking readiness...");
-                
-                // در برخی نسخه‌ها، وقتی Pi.init تمام شود، SDK آماده است
-                // اگر متد onready وجود نداشته باشد، مستقیم به مرحله موفقیت می‌رویم
-                if (typeof Pi.onready === 'function') {
-                    Pi.onready(() => {
-                        updateStatus("✅ SUCCESS: Pi SDK is Ready!", "success");
-                    });
-                } else {
-                    // اگر تابع onready پیدا نشد (همان خطایی که گرفتید)
-                    // یعنی SDK آماده است اما متد را اشتباه می‌شناسد
-                    updateStatus("✅ SUCCESS: SDK Ready (onready method missing but working)", "success");
-                }
+                updateStatus("SDK Connected!", "success");
+
+                // ۲. نمایش دکمه لاگین وقتی SDK آماده شد
+                loginButton.style.display = "inline-block";
+
+                // ۳. تعریف عملیات کلیک روی دکمه
+                loginButton.onclick = async () => {
+                    try {
+                        updateStatus("Authenticating...", "");
+                        // فراخوانی متد احراز هویت
+                        const auth = await Pi.authenticate(true, (error, auth) => {
+                            if (error) {
+                                updateStatus("Auth Failed: " + error.message, "error");
+                                return;
+                            }
+                            // اگر موفقیت‌آمیز بود
+                            showUser(auth.user);
+                        });
+                    } catch (err) {
+                        updateStatus("Error during authentication: " + err.message, "error");
+                    }
+                };
 
             } catch (e) {
-                updateStatus("❌ ERROR: " + e.message, "error");
-                console.error(e);
+                updateStatus("Initialization Error: " + e.message, "error");
             }
         }
 
-        // اجرای تابع
-        startPi();
+        function showUser(user) {
+            // مخفی کردن دکمه و نمایش اطلاعات کاربر
+            loginButton.style.display = "none";
+            statusDiv.style.display = "none";
+            userInfoDiv.style.display = "block";
+            
+            // نمایش نام کاربری (username)
+            usernameDisplay.textContent = "@" + user.username;
+        }
 
-        // مدیریت خطاها
-        window.addEventListener('error', (e) => {
-            updateStatus("❌ GLOBAL ERROR: " + e.message, "error");
-        });
+        // شروع برنامه
+        initApp();
     </script>
 </body>
 </html>
