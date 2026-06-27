@@ -1,0 +1,19 @@
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
+<script>
+Pi.init({ version: "2.0", sandbox: true });
+
+async function loginPi() {
+  try {
+    const scopes = ['username', 'payments'];
+    const auth = await Pi.authenticate(scopes, function(payment) {
+      console.log(payment);
+    });
+    
+    console.log("User:", auth.user);
+    alert("Welcome " + auth.user.username);
+
+  } catch (err) {
+    console.error(err);
+  }
+}
+</script>
