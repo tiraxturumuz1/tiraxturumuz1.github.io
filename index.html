@@ -2,108 +2,57 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pi Network Login</title>
+    <title>Pi Debugger</title>
     <style>
-        body {
-            font-family: sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            background-color: #f4f4f4;
-            margin: 0;
-        }
-        .container {
-            text-align: center;
-            background-color: #fff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            max-width: 90%;
-        }
-        h1 {
-            color: #003366;
-            margin-bottom: 20px;
-            font-size: 1.5rem;
-        }
-        button {
-            background-color: #007bff;
-            color: white;
-            padding: 12px 25px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s ease;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        button:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-        p {
-            margin-top: 20px;
-            color: #555;
-        }
-        #user-info {
-            margin-top: 15px;
-            font-weight: bold;
-            color: #28a745;
-        }
-        #sdk-status {
-            font-size: 12px;
-            color: #6c757d;
-            margin-top: 10px;
-        }
+        body { font-family: monospace; padding: 20px; line-height: 1.6; }
+        .log { background: #eee; padding: 10px; border-radius: 5px; white-space: pre-wrap; }
+        .error { color: red; font-weight: bold; }
+        .success { color: green; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Welcome to the decentralized international government.</h1>
-
-        <button id="login-button" disabled>Login with Pi</button>
-        <p id="user-info"></p>
-        <p id="sdk-status">Initializing Pi SDK...</p>
-    </div>
+    <h1>Pi Debugger</h1>
+    <div id="debug-log" class="log">Starting debug...<br></div>
 
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <script>
-        let loginButton = document.getElementById('login-button');
-        let userInfo = document.getElementById('user-info');
-        let sdkStatus = document.getElementById('sdk-status');
-
-        // تابع موفقیت لاگین
-        function onAuthSuccess(auth) {
-            console.log("Authentication successful:", auth);
-            userInfo.textContent = `Logged in as: ${auth.user.username}`;
-            loginButton.textContent = 'Logout';
-            loginButton.onclick = logout;
-            loginButton.disabled = false;
-            sdkStatus.textContent = 'Pi SDK Connected Successfully.';
+        const logDiv = document.getElementById('debug-log');
+        function log(msg, isError = false) {
+            const span = document.createElement('span');
+            span.className = isError ? 'error' : 'success';
+            span.innerHTML = `> ${msg}<br>`;
+            logDiv.appendChild(span);
+            console.log(msg);
         }
 
-        // تابع خروج
-        function logout() {
-            location.reload(); // ساده‌ترین راه برای ریست کردن حالت لاگین
+        log("Attempting Pi.init...");
+        try {
+            Pi.init({ 
+                version: "2.0", 
+                sandbox: true, // اگر درست نشد این را false کنید
+                appId: "pidao-pi-2uk8" 
+            });
+            log("Pi.init called successfully.");
+        } catch (e) {
+            log("Pi.init FAILED: " + e.message, true);
         }
 
-        // تابع شروع لاگین
-        function login() {
-            console.log("Attempting to login...");
-            loginButton.disabled = true;
-            sdkStatus.textContent = 'Requesting authentication...';
+        log("Waiting for Pi.onready()...");
+        Pi.onready(() => {
+            log("✅ SUCCESS: Pi.onready() triggered!");
+        });
 
-            // فراخوانی متد احراز هویت
-            Pi.authenticate(true, (auth, error) => {
-                if (error) {
-                    console.error("Authentication error:", error);
-                    userInfo.textContent = `Login failed: ${error.message}`;
-                    sdkStatus.textContent = `Error: ${error.message}`;
-                    loginButton.disabled = false;
+        Pi.onerror((err) => {
+            log("❌ SDK ERROR: " + JSON.stringify(err), true);
+        });
+
+        // چک کردن وضعیت در کنسول برای زمانی که مرورگر اجازه نمایش متن را نمی‌دهد
+        window.addEventListener('load', () => {
+            log("Page fully loaded.");
+        });
+    </script>
+</body>
+</html>
                     return;
                 }
                 onAuthSuccess(auth);
