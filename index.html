@@ -4,24 +4,106 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pi Network App</title>
+    <!-- لود کردن SDK رسمی شبکه پای -->
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: #f4f4f9; }
-        .container { text-align: center; padding: 20px; background: white; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 80%; max-width: 400px; }
-        button { background-color: #6a1b9a; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 8px; cursor: pointer; }
-        #user-info { margin-top: 20px; display: none; }
-        .error { color: red; font-size: 14px; margin-top: 10px; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f7f6;
+            text-align: center;
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            max-width: 90%;
+            width: 400px;
+        }
+        h1 {
+            font-size: 1.5rem;
+            color: #673ab7; /* رنگ بنفش نزدیک به برند پای */
+            margin-bottom: 1.5rem;
+        }
+        button {
+            background-color: #673ab7;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #512da8;
+        }
+        #user-info {
+            margin-top: 20px;
+            padding: 10px;
+            border-top: 1px solid #eee;
+            display: none;
+        }
+        .logout-btn {
+            background-color: #f44336;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
+
     <div class="container">
-        <h1>Pi App</h1>
-        <button id="login-btn" onclick="login()">Login with Pi</button>
+        <!-- متن مورد نظر شما در بالا -->
+        <h1>Welcome to the decentralized international government.</h1>
+
+        <!-- دکمه اصلی لاگین -->
+        <button id="login-button" onclick="login()">Login with Pi</button>
+
+        <!-- بخش نمایش اطلاعات کاربر پس از لاگین -->
         <div id="user-info">
-            <p>Welcome, <span id="username">...</span>!</p>
-            <p>Your Pi Username: <span id="pi-username">...</span></p>
-            <button onclick="location.reload()" style="background-color: #757575;">Logout</button>
+            <p>Welcome, <strong id="username"></strong>!</p>
+            <button class="logout-btn" onclick="logout()">Logout</button>
         </div>
-        <p id="error-msg" class="error"></p>
     </div>
-    
+
+    <script>
+        // مقدار sandbox را اگر در Pi Browser تست می‌کنید روی true یا false بر اساس تنظیمات پورتال بگذارید
+        // معمولاً برای تست اولیه sandbox: true قرار داده می‌شود
+        Pi.init({ version: "2.0", sandbox: true });
+
+        function login() {
+            Pi.authenticate(true, onAuthSuccess, onAuthError);
+        }
+
+        function onAuthSuccess(auth) {
+            console.log("Auth Success:", auth);
+            
+            // پنهان کردن دکمه لاگین و نمایش اطلاعات کاربر
+            document.getElementById('login-button').style.display = 'none';
+            document.getElementById('user-info').style.display = 'block';
+            
+            // نمایش نام کاربری
+            document.getElementById('username').innerText = auth.user.username;
+        }
+
+        function onAuthError(error) {
+            console.error("Auth Error:", error);
+            alert("Login failed: " + error.message);
+        }
+
+        function logout() {
+            // ساده‌ترین راه برای خروج و ریست کردن وضعیت، ریلود کردن صفحه است
+            location.reload();
+        }
+    </script>
+
+</body>
+</html>
