@@ -1,24 +1,27 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Pi Login Page</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pi Network App</title>
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: #f4f4f9; }
+        .container { text-align: center; padding: 20px; background: white; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 80%; max-width: 400px; }
+        button { background-color: #6a1b9a; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 8px; cursor: pointer; }
+        #user-info { margin-top: 20px; display: none; }
+        .error { color: red; font-size: 14px; margin-top: 10px; }
+    </style>
 </head>
 <body>
-    <h1>به سایت من خوش آمدید</h1>
-    <button id="pi-login-btn">Login with Pi</button>
-
-    <script>
-        Pi.init({ version: "2.0", sandbox: true });
-
-        document.getElementById('pi-login-btn').addEventListener('click', async () => {
-            try {
-                const auth = await Pi.authenticate(['username'], (payment) => {});
-                alert("خوش آمدید: " + auth.user.username);
-            } catch (err) {
-                alert("خطا در ورود: " + err);
-            }
-        });
-    </script>
-</body>
-</html>
+    <div class="container">
+        <h1>Pi App</h1>
+        <button id="login-btn" onclick="login()">Login with Pi</button>
+        <div id="user-info">
+            <p>Welcome, <span id="username">...</span>!</p>
+            <p>Your Pi Username: <span id="pi-username">...</span></p>
+            <button onclick="location.reload()" style="background-color: #757575;">Logout</button>
+        </div>
+        <p id="error-msg" class="error"></p>
+    </div>
+    
