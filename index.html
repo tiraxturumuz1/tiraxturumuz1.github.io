@@ -54,50 +54,61 @@
 
         function updateStatus(msg, type) {
             statusDiv.textContent = msg;
-            statusDiv.className = type;
+            statusDiv.className = type; // 'success' or 'error'
         }
 
-        // مقداردهی اولیه
+        // مقداردهی اولیه Pi SDK
         try {
             Pi.init({ 
                 version: "2.0", 
                 sandbox: true, 
-                appId: "pidao-pi-2uk8" 
+                appId: "pidao-pi-2uk8",
+                // *** اضافه کردن client_id ***
+                clientId: "c_1Hj75SyO_wbM4BUaxgVzuOmplNnrDj_2pWxDUkD8Q",
+                // *** اضافه کردن Redirect URI ***
+                // این آدرس باید دقیقاً با آدرسی که در Pi Developer Portal ثبت کرده‌اید مطابقت داشته باشد.
+                redirectUri: "https://tiraxturumuz1.github.io/index.html" 
             });
             
             updateStatus("SDK Connected!", "success");
-            loginButton.style.display = "inline-block";
+            loginButton.style.display = "inline-block"; // دکمه ورود را نمایش بده
         } catch (e) {
             updateStatus("Init Error: " + e.message, "error");
+            console.error("Pi SDK initialization failed:", e);
         }
 
-        // مدیریت کلیک دکمه با روش Callback (برای دور زدن باگ e.every)
+        // مدیریت کلیک دکمه ورود با استفاده از روش Callback
         loginButton.onclick = function() {
-            updateStatus("Authenticating...", "");
+            updateStatus("Authenticating...", ""); // نمایش پیام در حال احراز هویت
             
-            // استفاده از مدل Callback به جای Async/Await برای جلوگیری از باگ داخلی SDK
+            // استفاده از مدل Callback به جای Async/Await برای سازگاری بهتر با برخی نسخه‌های SDK
             Pi.authenticate(true, function(err, auth) {
                 if (err) {
-                    // اگر باز هم خطا داد، متن خطا را دقیق می‌بینیم
+                    // اگر خطایی رخ داد، متن خطا را نمایش بده و جزئیات را در کنسول ثبت کن
                     updateStatus("Auth Error: " + err.message, "error");
-                    console.error("Full error object:", err);
+                    console.error("Authentication error object:", err);
+                    // در صورت نیاز، می‌توانید کدهای بیشتری برای مدیریت خطا اضافه کنید،
+                    // مانند نمایش دلیل دقیق‌تر خطا به کاربر یا پاک کردن داده‌های احراز هویت قبلی.
                     return;
                 }
                 
-                // اگر موفقیت‌آمیز بود
+                // اگر احراز هویت موفقیت‌آمیز بود و اطلاعات کاربر دریافت شد
                 if (auth && auth.user) {
                     showUser(auth.user);
                 } else {
-                    updateStatus("No user data received.", "error");
+                    // اگر احراز هویت موفق بود اما اطلاعات کاربر دریافت نشد
+                    updateStatus("Authentication successful, but no user data received.", "error");
+                    console.error("No user data received after authentication.");
                 }
             });
         };
 
+        // تابعی برای نمایش اطلاعات کاربر پس از ورود موفق
         function showUser(user) {
-            loginButton.style.display = "none";
-            statusDiv.style.display = "none";
-            userInfoDiv.style.display = "block";
-            usernameDisplay.textContent = "@" + user.username;
+            loginButton.style.display = "none";         // دکمه ورود را مخفی کن
+            statusDiv.style.display = "none";           // پیام وضعیت را مخفی کن
+            userInfoDiv.style.display = "block";        // پنل اطلاعات کاربر را نمایش بده
+            usernameDisplay.textContent = "@" + user.username; // نام کاربری را نمایش بده
         }
     </script>
 </body>
