@@ -49,69 +49,84 @@
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 
     <script>
-        const statusDiv = document.getElementById('status');
-        const loginButton = document.getElementById('login-button');
-        const userInfoDiv = document.getElementById('user-info');
-        const usernameDisplay = document.getElementById('username-display');
+    const statusDiv = document.getElementById('status');
+    const loginButton = document.getElementById('login-button');
+    const userInfoDiv = document.getElementById('user-info');
+    const usernameDisplay = document.getElementById('username-display');
 
-        function updateStatus(msg, type) {
-            statusDiv.textContent = msg;
-            statusDiv.className = type; 
+    function updateStatus(msg, type) {
+        statusDiv.textContent = msg;
+        statusDiv.className = type; 
+    }
+
+    window.onload = function() {
+        console.log("Page fully loaded. Checking for redirect...");
+
+        if (typeof Pi === 'undefined') {
+            updateStatus("Error: Pi SDK not found.", "error");
+            return;
         }
 
-        // ۲. استفاده از window.onload برای اطمینان از لود شدن کامل همه چیز
-        window.onload = function() {
-            console.log("Page fully loaded. Starting Pi Init...");
+        // ۱. ابتدا مقداردهی اولیه
+        Pi.init({ 
+            version: "2.0", 
+            sandbox: true, 
+            appId: "pidao-pi-2uk8",
+            clientId: "c_1Hj75SyO_wbM4BUaxgVzuOmplNnrDj_2pWxDUkD8Q",
+            redirectUri: "https://tiraxturumuz1.github.io/index.html" 
+        }).then(() => {
+            console.log("Pi SDK Initialized.");
+            updateStatus("SDK Connected!", "success");
+            loginButton.style.display = "inline-block";
 
-            // بررسی وجود شیء Pi
-            if (typeof Pi === 'undefined') {
-                updateStatus("Error: Pi SDK not found. Check internet or URL.", "error");
-                return;
+            // ۲. نکته کلیدی: بررسی اینکه آیا کاربر از صفحه پای بازگشته است یا خیر
+            // اگر در URL پارامترهای مربوط به احراز هویت باشد، یعنی کاربر اجازه داده است
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('code') || urlParams.has('token')) {
+                console.log("Redirect detected! Finalizing authentication...");
+                // اگر بازگشت انجام شده، تابع احراز هویت را دوباره صدا می‌زنیم تا اطلاعات را دریافت کنیم
+                finishAuthentication();
             }
 
-            // ۳. مقداردهی اولیه
-            Pi.init({ 
-                version: "2.0", 
-                sandbox: true, 
-                appId: "pidao-pi-2uk8",
-                clientId: "c_1Hj75SyO_wbM4BUaxgVzuOmplNnrDj_2pWxDUkD8Q",
-                redirectUri: "https://tiraxturumuz1.github.io/index.html" 
-            }).then(() => {
-                console.log("Pi SDK Initialized successfully!");
-                updateStatus("SDK Connected!", "success");
-                loginButton.style.display = "inline-block";
-            }).catch((err) => {
-                console.error("Initialization error:", err);
-                updateStatus("Init Error: " + err.message, "error");
-            });
-        };
-
-        // ۴. مدیریت صحیح کلیک دکمه ورود
-        loginButton.addEventListener('click', function() {
-            updateStatus("Authenticating...", "");
-            
-            // در نسخه 2.0 بهتر است اسکوپ‌ها را به صورت آرایه بفرستید
-            Pi.authenticate(['username'], function(err, auth) {
-                if (err) {
-                    console.error("Auth Error:", err);
-                    updateStatus("Auth Error: " + err.message, "error");
-                    return;
-                }
-                
-                if (auth && auth.user) {
-                    showUser(auth.user);
-                } else {
-                    updateStatus("No user data received.", "error");
-                }
-            });
+        }).catch((err) => {
+            console.error("Initialization error:", err);
+            updateStatus("Init Error: " + err.message, "error");
         });
+    };
 
-        function showUser(user) {
-            loginButton.style.display = "none";
-            statusDiv.style.display = "none";
-            userInfoDiv.style.display = "block";
-            usernameDisplay.textContent = "@" + user.username;
-        }
-    </script>
+    // تابع برای مدیریت نهایی احراز هویت
+    function finishAuthentication() {
+        updateStatus("Completing authentication...", "");
+        
+        // در نسخه 2.0، وقتی بازگشت انجام می‌شود، Pi.authenticate باید اطلاعات را از URL بردارد
+        Pi.authenticate(['username'], function(err, auth) {
+            if (err) {
+                console.error("Auth Error:", err);
+                updateStatus("Auth Error: " + err.message, "error");
+                return;
+            }
+            
+            if (auth && auth.user) {
+                showUser(auth.user);
+            } else {
+                updateStatus("No user data received.", "error");
+            }
+        });
+    }
+
+    // مدیریت کلیک دکمه ورود (برای شروع اولین بار)
+    loginButton.addEventListener('click', function() {
+        updateStatus("Authenticating...", "");
+        finishAuthentication();
+    });
+
+    function showUser(user) {
+        console.log("User logged in:", user);
+        loginButton.style.display = "none";
+        statusDiv.style.display = "none";
+        userInfoDiv.style.display = "block";
+        usernameDisplay.textContent = "@" + user.username;
+    }
+</script>
 </body>
 </html>
