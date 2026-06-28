@@ -3,104 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pi Decentralized Government</title>
+    <title>Pi DAO Debug</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding-top: 50px; background-color: #f4f7f6; margin: 0; }
-        .container { background: white; padding: 40px; border-radius: 20px; display: inline-block; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 90%; }
-        h1 { color: #673ab7; font-size: 24px; margin-bottom: 10px; }
-        p { color: #666; }
-        #status { margin-top: 20px; padding: 10px; font-size: 14px; border-radius: 5px; }
-        .success { color: green; }
-        .error { color: red; }
-        .login-btn {
-            background-color: #673ab7;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 18px;
-            border-radius: 30px;
-            cursor: pointer;
-            margin-top: 25px;
-            display: none; 
-        }
-        #user-info { margin-top: 30px; padding: 20px; border-top: 1px solid #eee; display: none; }
-        .username { font-size: 22px; font-weight: bold; color: #333; }
-        .logout-btn { margin-top: 15px; background: none; border: 1px solid #ff5252; color: #ff5252; padding: 5px 15px; border-radius: 5px; cursor: pointer; }
+        body { font-family: sans-serif; text-align: center; padding-top: 50px; background-color: #f4f7f6; }
+        .container { background: white; padding: 40px; border-radius: 20px; display: inline-block; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 80%; }
+        #status { margin-top: 20px; padding: 15px; font-size: 14px; border-radius: 5px; border: 1px solid #ccc; }
+        .error { color: #c62828; background: #ffebee; border-color: #ef9a9a !important; }
+        .success { color: #2e7d32; background: #e8f5e9; }
+        .login-btn { background-color: #673ab7; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 30px; cursor: pointer; display: none; margin-top: 20px; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>Welcome to the decentralized international government.</h1>
-        <p>Please log in to access the platform.</p>
+        <h1>Pi DAO Debugger</h1>
+        <p>Check the status box below for error details.</p>
 
         <button id="login-button" class="login-btn">Login with Pi</button>
-
-        <div id="user-info">
-            <p>Welcome back,</p>
-            <div class="username" id="username-display"></div>
-            <button class="logout-btn" onclick="location.reload()">Logout</button>
+        <div id="user-info" style="display:none;">
+            <p>Welcome, <span id="username-display"></span></p>
         </div>
 
-        <div id="status">Initializing SDK...</div>
+        <div id="status">Waiting for SDK script...</div>
     </div>
 
+    <!-- لود کردن اسکریپت -->
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+
     <script>
         const statusDiv = document.getElementById('status');
         const loginButton = document.getElementById('login-button');
-        const userInfoDiv = document.getElementById('user-info');
         const usernameDisplay = document.getElementById('username-display');
+        const userInfoDiv = document.getElementById('user-info');
 
         function updateStatus(msg, type) {
             statusDiv.textContent = msg;
             statusDiv.className = type;
+            console.log("Status:", msg);
         }
 
-        // مقداردهی اولیه
-        try {
+        window.onload = function() {
+            // مرحله ۱: چک کردن اینکه آیا اسکریپت لود شده یا نه
+            if (typeof Pi === 'undefined') {
+                updateStatus("CRITICAL ERROR: Pi SDK script failed to load. Check your internet or the <script> tag.", "error");
+                return;
+            }
+            updateStatus("SDK Script found. Initializing...", "");
+
+            // مرحله ۲: مقداردهی اولیه با مدیریت خطای بسیار دقیق
             Pi.init({ 
                 version: "2.0", 
-                sandbox: true, 
-                appId: "pidao-pi-2uk8" 
+                sandbox: true, // اگر در پنل Mainnet هستید، این را false کنید
+                appId: "pidao-pi-2uk8",
+                clientId: "c_1Hj75SyO_wbM4BUaxgVzuOmplNnrDj_2pWxDUkD8Q",
+                redirectUri: "https://tiraxturumuz1.github.io/index.html" 
+            }).then(() => {
+                updateStatus("Initialization Successful!", "success");
+                loginButton.style.display = "inline-block";
+
+                // بررسی بازگشت از احراز هویت
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.has('code')) {
+                    updateStatus("Redirect detected. Authenticating...", "");
+                    finishAuthentication();
+                }
+            }).catch((err) => {
+                // این بخش بسیار مهم است. خطا را دقیقاً نمایش می‌دهد.
+                console.error("Pi.init failed:", err);
+                updateStatus("INIT ERROR: " + JSON.stringify(err), "error");
             });
-            
-            updateStatus("SDK Connected!", "success");
-            loginButton.style.display = "inline-block";
-        } catch (e) {
-            updateStatus("Init Error: " + e.message, "error");
+        };
+
+        function finishAuthentication() {
+            Pi.authenticate(['username'], function(err, auth) {
+                if (err) {
+                    updateStatus("AUTH ERROR: " + JSON.stringify(err), "error");
+                    return;
+                }
+                if (auth && auth.user) {
+                    loginButton.style.display = "none";
+                    statusDiv.style.display = "none";
+                    userInfoDiv.style.display = "block";
+                    usernameDisplay.textContent = "@" + auth.user.username;
+                }
+            });
         }
 
-        // مدیریت کلیک دکمه با روش Callback (برای دور زدن باگ e.every)
-        loginButton.onclick = function finishAuthentication() {
-    updateStatus("Authenticating...", "");
-    console.log("Attempting to authenticate...");
-
-    // استفاده از متد ساده‌تر برای تست
-    Pi.authenticate(['username'], function(err, auth) {
-        if (err) {
-            console.error("Detailed Auth Error:", err);
-            // این قسمت بسیار مهم است: نمایش جزئیات خطا در صفحه
-            updateStatus("Auth Error: " + (err.message || JSON.stringify(err)), "error");
-            return;
-        }
-        
-        console.log("Auth Success object:", auth);
-        if (auth && auth.user) {
-            showUser(auth.user);
-        } else {
-            updateStatus("Auth successful but no user data found.", "error");
-        }
-    });
-}
-
-        function showUser(user) {
-            loginButton.style.display = "none";
-            statusDiv.style.display = "none";
-            userInfoDiv.style.display = "block";
-            usernameDisplay.textContent = "@" + user.username;
-        }
+        loginButton.addEventListener('click', finishAuthentication);
     </script>
 </body>
 </html>
-
