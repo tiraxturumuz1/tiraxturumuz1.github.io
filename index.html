@@ -5,100 +5,74 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pi Decentralized Government</title>
     <style>
-        /* استایل‌های ظاهری برای زیبایی بیشتر */
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            text-align: center; 
-            padding-top: 50px; 
-            background-color: #f4f7f6; 
-            margin: 0; 
-        }
-        .container { 
-            background: white; 
-            padding: 40px; 
-            border-radius: 20px; 
-            display: inline-block; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
-            max-width: 90%; 
-            min-width: 300px;
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding-top: 50px; background-color: #f4f7f6; margin: 0; }
+        .container { background: white; padding: 40px; border-radius: 20px; display: inline-block; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 90%; }
         h1 { color: #673ab7; font-size: 24px; margin-bottom: 10px; }
         p { color: #666; }
-        
-        #status { 
-            margin-top: 20px; 
-            padding: 10px; 
-            font-size: 17px; 
-            border-radius: 5px; 
-        }
-        .success { color: #2e7d32; background: #e8f5e9; }
-        .error { color: #c62828; background: #ffebee; }
-        
+        #status { margin-top: 20px; padding: 10px; font-size: 14px; border-radius: 5px; }
+        .success { color: green; }
+        .error { color: red; }
         .login-btn {
             background-color: #673ab7;
             color: white;
             border: none;
             padding: 15px 30px;
-            font-size: 16px;
+            font-size: 18px;
             border-radius: 30px;
             cursor: pointer;
             margin-top: 25px;
-            display: none; /* در ابتدا مخفی است تا SDK لود شود */
-            transition: background 0.3s;
-        }
-        .login-btn:hover { background-color: #512da8; }
-
-        #user-info { 
-            margin-top: 30px; 
-            padding: 20px; 
-            border-top: 1px solid #eee; 
             display: none; 
         }
-        .username { font-size: 29px; font-weight: bold; color: #333; margin-bottom: 10px; }
-        .logout-btn { 
-            margin-top: 15px; 
-            background: none; 
-            border: 1px solid #ff5252; 
-            color: #ff5252; 
-            padding: 5px 15px; 
-            border-radius: 5px; 
-            cursor: pointer; 
-        }
+        #user-info { margin-top: 30px; padding: 20px; border-top: 1px solid #eee; display: none; }
+        .username { font-size: 22px; font-weight: bold; color: #333; }
+        .logout-btn { margin-top: 15px; background: none; border: 1px solid #ff5252; color: #ff5252; padding: 5px 15px; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>Pi DAO</h1>
-        <p id="welcome to pi Dao">Please log in to access the platform.</p>
+        <h1>Welcome to the decentralized international government.</h1>
+        <p>Please log in to access the platform.</p>
 
-        <!-- دکمه ورود -->
         <button id="login-button" class="login-btn">Login with Pi</button>
 
-        <!-- بخش نمایش اطلاعات کاربر پس از ورود -->
         <div id="user-info">
             <p>Welcome back,</p>
             <div class="username" id="username-display"></div>
             <button class="logout-btn" onclick="location.reload()">Logout</button>
         </div>
 
-        <!-- نمایش وضعیت عملیات (Initializing, Success, Error) -->
         <div id="status">Initializing SDK...</div>
     </div>
 
-    <!-- ۱. لود کردن اسکریپت Pi SDK (باید قبل از کدهای اصلی باشد) -->
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-
     <script>
-        // انتخاب المان‌ها از DOM
         const statusDiv = document.getElementById('status');
         const loginButton = document.getElementById('login-button');
         const userInfoDiv = document.getElementById('user-info');
         const usernameDisplay = document.getElementById('username-display');
-        const welcomeText = document.getElementById('welcome-text');
 
-        // تابع کمکی برای آپدیت پیام وضعیت
-        function finishAuthentication() {
+        function updateStatus(msg, type) {
+            statusDiv.textContent = msg;
+            statusDiv.className = type;
+        }
+
+        // مقداردهی اولیه
+        try {
+            Pi.init({ 
+                version: "2.0", 
+                sandbox: true, 
+                appId: "pidao-pi-2uk8" 
+            });
+            
+            updateStatus("SDK Connected!", "success");
+            loginButton.style.display = "inline-block";
+        } catch (e) {
+            updateStatus("Init Error: " + e.message, "error");
+        }
+
+        // مدیریت کلیک دکمه با روش Callback (برای دور زدن باگ e.every)
+        loginButton.onclick = function finishAuthentication() {
     updateStatus("Authenticating...", "");
     console.log("Attempting to authenticate...");
 
@@ -120,40 +94,13 @@
     });
 }
 
-        // تابع اصلی برای انجام فرآیند احراز هویت
-        function finishAuthentication() {
-            updateStatus("Authenticating...", "");
-            
-            // فراخوانی متد احراز هویت نسخه 2.0
-            Pi.authenticate(['username'], function(err, auth) {
-                if (err) {
-                    console.error("Authentication Error:", err);
-                    updateStatus("Auth Error: " + err.message, "error");
-                    return;
-                }
-                
-                if (auth && auth.user) {
-                    showUser(auth.user);
-                } else {
-                    updateStatus("No user data received.", "error");
-                }
-            });
-        }
-
-        // مدیریت کلیک دکمه ورود (برای اولین بار)
-        loginButton.addEventListener('click', function() {
-            finishAuthentication();
-        });
-
-        // نمایش اطلاعات کاربر در صفحه
         function showUser(user) {
-            console.log("User data received:", user);
             loginButton.style.display = "none";
             statusDiv.style.display = "none";
-            welcomeText.style.display = "none";
             userInfoDiv.style.display = "block";
             usernameDisplay.textContent = "@" + user.username;
         }
     </script>
 </body>
 </html>
+
