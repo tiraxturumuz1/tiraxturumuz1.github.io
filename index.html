@@ -82,6 +82,11 @@
             updateStatus("Authenticating...", ""); // نمایش پیام در حال احراز هویت
             
             // استفاده از مدل Callback به جای Async/Await برای سازگاری بهتر با برخی نسخه‌های SDK
+            loginButton.onclick = function() {
+    console.log("Login button clicked!");
+    updateStatus("Authenticating...", "");
+    // ...
+                
             Pi.authenticate(true, function(err, auth) {
                 if (err) {
                     // اگر خطایی رخ داد، متن خطا را نمایش بده و جزئیات را در کنسول ثبت کن
