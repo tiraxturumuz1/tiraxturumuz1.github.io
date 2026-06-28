@@ -1,4 +1,3 @@
-// backend/server.js
 import express from "express";
 import cors from "cors";
 
@@ -8,15 +7,23 @@ app.use(express.json());
 
 const PI_API_KEY = process.env.PI_API_KEY;
 const PI_BASE = "https://api.minepi.com/v2";
+const PUBLIC_URL = process.env.PUBLIC_URL || "https://your-domain.com";
+
+app.get("/pi/metadata", (req, res) => {
+  res.json({
+    title: "Pi Dao",
+    description: "Pi payment app",
+    image: `${PUBLIC_URL}/preview.png`,
+    url: PUBLIC_URL
+  });
+});
 
 app.post("/approve", async (req, res) => {
   try {
     const { paymentId } = req.body;
     const r = await fetch(`${PI_BASE}/payments/${paymentId}/approve`, {
       method: "POST",
-      headers: {
-        Authorization: `Key ${PI_API_KEY}`,
-      },
+      headers: { Authorization: `Key ${PI_API_KEY}` }
     });
     const text = await r.text();
     res.status(r.status).send(text);
@@ -32,9 +39,9 @@ app.post("/complete", async (req, res) => {
       method: "POST",
       headers: {
         Authorization: `Key ${PI_API_KEY}`,
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
-      body: JSON.stringify({ txid }),
+      body: JSON.stringify({ txid })
     });
     const text = await r.text();
     res.status(r.status).send(text);
