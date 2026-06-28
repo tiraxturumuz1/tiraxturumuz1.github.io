@@ -2,74 +2,71 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pi Auth Fix</title>
+    <title>Pi Ultimate Debug</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding-top: 50px; background-color: #f4f7f6; }
-        .container { background: white; padding: 40px; border-radius: 20px; display: inline-block; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 80%; }
-        #status { margin-top: 20px; padding: 15px; font-size: 14px; border-radius: 5px; border: 1px solid #ccc; min-height: 30px; }
-        .error { color: #c62828; background: #ffebee; border-color: #ef9a9a !important; }
-        .success { color: #2e7d32; background: #e8f5e9; }
-        .login-btn { background-color: #673ab7; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 30px; cursor: pointer; margin-top: 20px; }
+        body { font-family: sans-serif; text-align: center; padding: 50px; }
+        #status { padding: 20px; border: 2px solid #ccc; margin: 20px; min-height: 50px; }
+        .error { color: red; border-color: red !important; background: #fee; }
+        .success { color: green; border-color: green !important; background: #efe; }
+        button { padding: 15px 30px; font-size: 20px; cursor: pointer; background: #673ab7; color: white; border: none; border-radius: 10px; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>Pi Auth Debug</h1>
-        <div id="status">Initializing...</div>
-        <button id="login-button" class="login-btn" style="display:none;">LOGIN WITH PI</button>
-    </div>
+    <h1>Pi Connection Test</h1>
+    <div id="status">Initializing...</div>
+    <button id="login-btn" style="display:none;">CONNECT TO PI</button>
 
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 
     <script>
         const statusDiv = document.getElementById('status');
-        const loginButton = document.getElementById('login-button');
+        const btn = document.getElementById('login-btn');
 
-        function updateStatus(msg, isError = false) {
+        function update(msg, isErr = false) {
             statusDiv.textContent = msg;
-            statusDiv.className = isError ? "error" : "success";
+            statusDiv.className = isErr ? "error" : "success";
         }
 
         window.onload = function() {
-            if (typeof Pi === 'undefined') {
-                updateStatus("Error: Pi SDK not loaded!", true);
-                return;
-            }
-
-            // تست اول: لود شدن اولیه
-            // نکته: اگر sandbox: false کار نکرد، دوباره به true برگردانید
+            // مرحله ۱: مقداردهی اولیه
             Pi.init({ 
                 version: "2.0", 
-                sandbox: false, 
+                sandbox: true, // <--- حتماً با وضعیت پنل خود یکی کنید (اگر Mainnet هستید false کنید)
                 appId: "pidao-pi-2uk8",
                 clientId: "c_1Hj75SyO_wbM4BUaxgVzuOmplNnrDj_2pWxDUkD8Q",
                 redirectUri: "https://tiraxturumuz1.github.io/index.html" 
             }).then(() => {
-                updateStatus("Init Success! Click the button below.");
-                loginButton.style.display = "inline-block";
-            }).catch((err) => {
-                updateStatus("Init Error: " + JSON.stringify(err), true);
+                update("Step 1: OK! Ready to connect.");
+                btn.style.display = "inline-block";
+            }).catch(err => {
+                update("Step 1 ERROR: " + JSON.stringify(err), true);
             });
         };
 
-        loginButton.onclick = function() {
-            updateStatus("Requesting permission...");
-            
-            // استفاده از setTimeout برای اطمینان از اینکه درخواست خارج از جریان لود اولیه است
-            setTimeout(() => {
-                Pi.authenticate(['username'], function(err, auth) {
-                    if (err) {
-                        updateStatus("Auth Error: " + JSON.stringify(err), true);
-                    } else if (auth && auth.user) {
-                        updateStatus("Success! Welcome " + auth.user.username);
-                        loginButton.style.display = "none";
-                    } else {
-                        updateStatus("Error: No data returned", true);
-                    }
-                });
-            }, 500);
+        btn.onclick = function() {
+            update("Step 2: Sending request to Pi Network...");
+            btn.disabled = true;
+
+            // ایجاد یک تایمر برای اینکه اگر پاسخی نیامد، بفهمیم مشکل از کجاست
+            const timeout = setTimeout(() => {
+                update("TIMEOUT ERROR: The Pi Network did not respond. This usually means your Redirect URI is wrong in the Pi Developer Portal or Sandbox mode mismatch.", true);
+                btn.disabled = false;
+            }, 10000); // اگر ۱۰ ثانیه پاسخی نیامد
+
+            Pi.authenticate(['username'], function(err, auth) {
+                clearTimeout(timeout); // اگر پاسخی آمد، تایمر را متوقف کن
+                btn.disabled = false;
+
+                if (err) {
+                    update("Step 2 ERROR: " + JSON.stringify(err), true);
+                } else if (auth && auth.user) {
+                    update("SUCCESS! Welcome " + auth.user.username);
+                    btn.style.display = "none";
+                } else {
+                    update("Unknown error: No data received.", true);
+                }
+            });
         };
     </script>
 </body>
