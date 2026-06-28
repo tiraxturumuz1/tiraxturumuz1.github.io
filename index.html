@@ -77,7 +77,7 @@
 
         window.onload = function() {
             if (typeof Pi === 'undefined') {
-                updateStatus("Error: Pi SDK not found. Are you in Pi Browser?", "error");
+                updateStatus("Error: Pi SDK not found. Use Pi Browser.", "error");
                 return;
             }
 
@@ -95,10 +95,11 @@
             });
         };
 
+        // ⚠️ نکته کلیدی: افزودن 'payments' به اسکوپ‌ها
         loginButton.addEventListener('click', function() {
             updateStatus("Authenticating...", "");
 
-            Pi.authenticate(['username'], function(payment) {
+            Pi.authenticate(['username', 'payments'], function(payment) {
                 console.log('Incomplete payment found:', payment);
             }).then(function(auth) {
                 if (auth && auth.user) {
@@ -119,42 +120,39 @@
             payButton.style.display = "inline-block";
         }
 
-        // ------------------- پرداخت ساده با Promise و بدون callback -------------------
+        // ------------------- پرداخت (حالا مجوز payments داریم) -------------------
         payButton.addEventListener('click', function() {
             payButton.disabled = true;
             paymentStatus.textContent = "Creating payment...";
             paymentStatus.className = "";
 
-            // فقط Promise ساده برای عیب‌یابی
             Pi.createPayment({
                 amount: 0.0001,
-                memo: "Test payment - debugging",
-                metadata: { debug: true }
+                memo: "Test payment for Pi Dao",
+                metadata: { orderId: "12345" }
             }, {
-                // callbackهای خالی برای جلوگیری از خطای undefined
-                onReadyForServerApproval: function(id) {
-                    console.log("onReadyForServerApproval", id);
-                    paymentStatus.textContent = "Payment created. Approval needed.";
+                onReadyForServerApproval: function(paymentId) {
+                    console.log("onReadyForServerApproval:", paymentId);
+                    paymentStatus.textContent = "Payment created. Waiting for approval...";
                 },
-                onReadyForServerCompletion: function(id, txid) {
-                    console.log("onReadyForServerCompletion", id, txid);
-                    paymentStatus.textContent = "Payment completed by server.";
+                onReadyForServerCompletion: function(paymentId, txid) {
+                    console.log("onReadyForServerCompletion:", paymentId, txid);
+                    paymentStatus.textContent = "Payment completed successfully!";
                     payButton.disabled = false;
                 },
-                onCancel: function(id) {
-                    console.log("onCancel", id);
-                    paymentStatus.textContent = "Cancelled.";
+                onCancel: function(paymentId) {
+                    console.log("onCancel:", paymentId);
+                    paymentStatus.textContent = "Payment cancelled.";
                     payButton.disabled = false;
                 },
-                onError: function(err, payment) {
-                    console.error("onError", err, payment);
-                    paymentStatus.textContent = "Error: " + err.message;
+                onError: function(error, payment) {
+                    console.error("onError:", error, payment);
+                    paymentStatus.textContent = "Error: " + error.message;
                     payButton.disabled = false;
                 }
             }).then(function(res) {
                 console.log("Payment Promise resolved:", res);
-                paymentStatus.textContent = "Payment successful (Promise).";
-                payButton.disabled = false;
+                // این خط فقط پس از تکمیل سمت سرور اجرا می‌شود
             }).catch(function(err) {
                 console.error("Payment Promise rejected:", err);
                 paymentStatus.textContent = "Payment failed: " + (err.message || JSON.stringify(err));
