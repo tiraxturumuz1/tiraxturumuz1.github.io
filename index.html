@@ -5,54 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pi Dao</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding-top: 50px; background-color: #f4f7f6; margin: 0; }
-        .container { background: white; padding: 40px; border-radius: 20px; display: inline-block; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 90%; }
-        h1 { color: #673ab7; font-size: 24px; margin-bottom: 10px; }
-        p { color: #666; }
-        #status { margin-top: 20px; padding: 10px; font-size: 14px; border-radius: 5px; }
-        .success { color: green; }
-        .error { color: red; }
-        .login-btn {
-            background-color: #673ab7;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 18px;
-            border-radius: 30px;
-            cursor: pointer;
-            margin-top: 25px;
-            display: none; 
-        }
-        #user-info { margin-top: 30px; padding: 20px; border-top: 1px solid #eee; display: none; }
-        .username { font-size: 22px; font-weight: bold; color: #333; }
-        .logout-btn { margin-top: 15px; background: none; border: 1px solid #ff5252; color: #ff5252; padding: 5px 15px; border-radius: 5px; cursor: pointer; }
-        .pay-btn {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 18px;
-            border-radius: 30px;
-            cursor: pointer;
-            margin-top: 25px;
-            display: none;
-        }
-        .pay-btn:disabled { background-color: #aaa; cursor: not-allowed; }
-        #payment-status { margin-top: 15px; font-weight: bold; }
+        body { font-family: sans-serif; text-align: center; padding-top: 50px; background: #f5f5f5; }
+        .container { background: white; padding: 30px; border-radius: 16px; display: inline-block; box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 90%; }
+        h1 { color: #673ab7; }
+        button { padding: 12px 25px; font-size: 16px; border: none; border-radius: 25px; cursor: pointer; margin-top: 20px; }
+        .login-btn { background: #673ab7; color: white; display: none; }
+        .pay-btn { background: #4CAF50; color: white; display: none; }
+        .logout-btn { background: none; color: #ff5252; border: 1px solid #ff5252; margin-top: 10px; }
+        #status { margin-top: 15px; font-weight: bold; }
+        #user-info { display: none; margin-top: 20px; }
+        .username { font-size: 18px; color: #333; }
     </style>
 </head>
 <body>
-
     <div class="container">
-        <h1>Welcome.</h1>
-        <p>Please log in to access the platform.</p>
+        <h1>Pi Dao</h1>
+        <p>Please log in to continue</p>
 
         <button id="login-button" class="login-btn">Login with Pi</button>
 
         <div id="user-info">
-            <p>Welcome back,</p>
             <div class="username" id="username-display"></div>
-            <button id="pay-button" class="pay-btn">Pay 0.0001 Pi (Test)</button>
+            <button id="pay-button" class="pay-btn">Pay 1 Pi (Test)</button>
             <div id="payment-status"></div>
             <button class="logout-btn" onclick="location.reload()">Logout</button>
         </div>
@@ -61,104 +35,91 @@
     </div>
 
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-
     <script>
         const statusDiv = document.getElementById('status');
-        const loginButton = document.getElementById('login-button');
+        const loginBtn = document.getElementById('login-button');
         const userInfoDiv = document.getElementById('user-info');
         const usernameDisplay = document.getElementById('username-display');
-        const payButton = document.getElementById('pay-button');
+        const payBtn = document.getElementById('pay-button');
         const paymentStatus = document.getElementById('payment-status');
 
-        function updateStatus(msg, type) {
-            statusDiv.textContent = msg;
-            statusDiv.className = type; 
-        }
+        // 1. راه‌اندازی Pi SDK
+        Pi.init({
+            version: "2.0",
+            sandbox: true,
+            appId: "pidao-pi-2uk8",
+            clientId: "c_1Hj75SyO_wbM4BUaxgVzuOmplNnrDj_2pWxDUkD8Q",
+            redirectUri: "https://tiraxturumuz1.github.io/index.html"
+        }).then(() => {
+            statusDiv.textContent = "SDK Connected! Please log in.";
+            loginBtn.style.display = "inline-block";
+        }).catch(err => {
+            statusDiv.textContent = "Init error: " + err.message;
+        });
 
-        window.onload = function() {
-            if (typeof Pi === 'undefined') {
-                updateStatus("Error: Pi SDK not found. Are you in Pi Browser?", "error");
-                return;
-            }
-
-            Pi.init({ 
-                version: "2.0", 
-                sandbox: true, 
-                appId: "pidao-pi-2uk8",
-                clientId: "c_1Hj75SyO_wbM4BUaxgVzuOmplNnrDj_2pWxDUkD8Q",
-                redirectUri: "https://tiraxturumuz1.github.io/index.html" 
-            }).then(() => {
-                updateStatus("SDK Connected!", "success");
-                loginButton.style.display = "inline-block";
-            }).catch((err) => {
-                updateStatus("Init Error: " + err.message, "error");
-            });
-        };
-
-        loginButton.addEventListener('click', function() {
-            updateStatus("Authenticating...", "");
-
-            Pi.authenticate(['username'], function(payment) {
-                console.log('Incomplete payment found:', payment);
-            }).then(function(auth) {
+        // 2. لاگین و گرفتن مجوز کیف پول
+        loginBtn.addEventListener('click', () => {
+            Pi.authenticate(['username', 'payments'], (incompletePayment) => {
+                console.log('Incomplete payment found:', incompletePayment);
+            }).then(auth => {
                 if (auth && auth.user) {
-                    showUser(auth.user);
+                    usernameDisplay.textContent = "@" + auth.user.username;
+                    userInfoDiv.style.display = "block";
+                    loginBtn.style.display = "none";
+                    payBtn.style.display = "inline-block";
+                    statusDiv.textContent = "Logged in. You can now pay.";
                 } else {
-                    updateStatus("No user data received.", "error");
+                    statusDiv.textContent = "Login failed: no user data.";
                 }
-            }).catch(function(err) {
-                updateStatus("Auth Error: " + (err.message || 'User cancelled'), "error");
+            }).catch(err => {
+                statusDiv.textContent = "Auth error: " + (err.message || err);
             });
         });
 
-        function showUser(user) {
-            loginButton.style.display = "none";
-            statusDiv.style.display = "none";
-            userInfoDiv.style.display = "block";
-            usernameDisplay.textContent = "@" + user.username;
-            payButton.style.display = "inline-block";
-        }
+        // 3. دکمهٔ پرداخت
+        payBtn.addEventListener('click', async () => {
+            payBtn.disabled = true;
+            paymentStatus.textContent = "Creating payment... (if it spins, proceed to Developer Portal)";
+            
+            // باز کردن کیف پول برای اطمینان (اگر قفل باشد، رمز می‌خواهد)
+            try {
+                await Pi.openWallet();
+            } catch (e) {
+                console.log("Wallet already open or error:", e);
+            }
 
-        // ------------------- پرداخت ساده با Promise و بدون callback -------------------
-        payButton.addEventListener('click', function() {
-            payButton.disabled = true;
-            paymentStatus.textContent = "Creating payment...";
-            paymentStatus.className = "";
-
-            // فقط Promise ساده برای عیب‌یابی
+            // ایجاد پرداخت
             Pi.createPayment({
-                amount: 0.0001,
-                memo: "Test payment - debugging",
-                metadata: { debug: true }
+                amount: 1,
+                memo: "Test payment - Pi Dao",
+                metadata: { orderId: "12345" }
             }, {
-                // callbackهای خالی برای جلوگیری از خطای undefined
-                onReadyForServerApproval: function(id) {
-                    console.log("onReadyForServerApproval", id);
-                    paymentStatus.textContent = "Payment created. Approval needed.";
+                // این callback ها برای Frontend mode کار می‌کنند، هرچند در Sandbox شاید بی‌صدا باشند
+                onReadyForServerApproval: (paymentId) => {
+                    console.log("Ready for approval:", paymentId);
+                    paymentStatus.textContent = "Payment created. Now approve it manually in Developer Portal (see instructions).";
                 },
-                onReadyForServerCompletion: function(id, txid) {
-                    console.log("onReadyForServerCompletion", id, txid);
-                    paymentStatus.textContent = "Payment completed by server.";
-                    payButton.disabled = false;
+                onReadyForServerCompletion: (paymentId, txid) => {
+                    console.log("Completed:", paymentId, txid);
+                    paymentStatus.textContent = "Payment completed!";
+                    payBtn.disabled = false;
                 },
-                onCancel: function(id) {
-                    console.log("onCancel", id);
-                    paymentStatus.textContent = "Cancelled.";
-                    payButton.disabled = false;
+                onCancel: (paymentId) => {
+                    console.log("Cancelled:", paymentId);
+                    paymentStatus.textContent = "Payment cancelled.";
+                    payBtn.disabled = false;
                 },
-                onError: function(err, payment) {
-                    console.error("onError", err, payment);
-                    paymentStatus.textContent = "Error: " + err.message;
-                    payButton.disabled = false;
+                onError: (error, payment) => {
+                    console.error("Error:", error, payment);
+                    paymentStatus.textContent = "Error: " + error.message;
+                    payBtn.disabled = false;
                 }
-            }).then(function(res) {
-                console.log("Payment Promise resolved:", res);
-                paymentStatus.textContent = "Payment successful (Promise).";
-                payButton.disabled = false;
-            }).catch(function(err) {
-                console.error("Payment Promise rejected:", err);
-                paymentStatus.textContent = "Payment failed: " + (err.message || JSON.stringify(err));
-                payButton.disabled = false;
+            }).then(result => {
+                console.log("Payment resolved:", result);
+            }).catch(error => {
+                console.error("Payment rejected:", error);
+                paymentStatus.textContent = "Payment failed: " + (error.message || error);
+                payBtn.disabled = false;
             });
         });
     </script>
