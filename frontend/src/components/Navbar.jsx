@@ -6,10 +6,9 @@ const Navbar = () => {
     <nav className="navbar">
       <a href="/" className="logo">PiDao</a>
       <ul className="nav-links">
-        <li><a href="/">Home</a></li>
         <li><a href="#features">Features</a></li>
-        <li><a href="/docs">Docs</a></li>
-        <li><a href="/login" className="btn-get-started">Get Started</a></li>
+        <li><a href="#poll">Governance</a></li>
+        <li><a href="#about">About</a></li>
       </ul>
     </nav>
   );
