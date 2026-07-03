@@ -4,7 +4,7 @@ import path from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  // برای مخزن‌هایی که نامشان username.github.io است، base باید '/' باشد
+  // برای مخزن‌هایی که نامشان tiraxturumuz1.github.io است، base باید '/' باشد
   base: '/', 
   plugins: [react()],
   resolve: {
