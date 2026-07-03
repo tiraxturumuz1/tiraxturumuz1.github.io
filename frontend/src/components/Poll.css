@@ -1,25 +1,21 @@
-.poll-container {
-    padding: 60px 5%;
-    background-color: #f8fafc;
+.poll-section {
+    padding: 80px 5%;
+    background-color: #f1f5f9;
     text-align: center;
 }
 
-.poll-card {
-    max-width: 500px;
+.poll-container {
+    max-width: 600px;
     margin: 0 auto;
     background: white;
     padding: 40px;
     border-radius: 20px;
     box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-    border: 1px solid #e2e8f0;
 }
 
 .poll-question {
-    font-size: 22px;
-    color: #1e293b;
+    font-size: 1.5rem;
     margin-bottom: 30px;
-    font-weight: 600;
-    line-height: 1.4;
 }
 
 .poll-options {
@@ -28,51 +24,29 @@
     gap: 15px;
 }
 
-.poll-option-btn {
+.poll-btn {
     padding: 15px;
-    font-size: 16px;
+    border-radius: 10px;
+    background: #fff;
     border: 2px solid #e2e8f0;
-    border-radius: 12px;
-    background: white;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-align: left;
-    position: relative;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.poll-btn:hover {
+    border-color: var(--primary);
+}
+
+.result-bar-container {
+    margin-top: 20px;
+    background: #e2e8f0;
+    height: 12px;
+    border-radius: 6px;
     overflow: hidden;
 }
 
-.poll-option-btn:hover {
-    border-color: #2563eb;
-    background-color: #f0f7ff;
-}
-
-/* استایل برای وقتی که کاربر رای داده است */
-.poll-option-btn.voted {
-    cursor: default;
-    pointer-events: none;
-}
-
-.progress-bar {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    background-color: #dbeafe;
-    z-index: 0;
-    transition: width 0.5s ease-out;
-}
-
-.option-text {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    justify-content: space-between;
-    font-weight: 500;
-}
-
-.percentage {
-    position: relative;
-    z-index: 1;
-    font-weight: bold;
-    color: #2563eb;
+.result-bar {
+    height: 100%;
+    background: var(--primary);
+    transition: width 0.5s ease-in-out;
 }
