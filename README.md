@@ -1,26 +1,26 @@
-# Pi Decentralized Government & Pi Dao
+## ⚙️ Setup & Installation
 
-This repository contains the source code for the Pi Decentralized Government and Pi Dao applications, designed to integrate with the Pi Network SDK.
+Follow these steps to get the development environment running on your local machine.
 
-## 🚀 Project Overview
+### 1. Prerequisites
+Make sure you have the following installed:
+- [Node.js](https://nodejs.org/) (Version 18 or higher recommended)
+- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
+- [Docker](https://www.docker.com/) (Optional, for containerized deployment)
 
-This project consists of a modern web application built with React and Vite, designed to work seamlessly within the Pi Browser environment. It includes:
+---
 
-- **Frontend:** A high-performance React application using Vite.
-- **Backend:** A Node.js/TypeScript backend for handling user authentication and Pi Platform API interactions.
-- **Authentication:** Integrated with Pi Network OAuth2 flow.
+### 2. Frontend Setup (React + Vite)
+The frontend is a Single Page Application (SPA) built with Vite.
+```bash
+# 1. Navigate to the frontend directory
+cd frontend
 
-## 🛠 Tech Stack
+# 2. Install all necessary dependencies
+npm install
 
-- **Frontend:** React, TypeScript, Vite, Axios
-- **Backend:** Node.js, TypeScript, Express
-- **Deployment:** GitHub Actions (Automated CI/CD)
-- **Containerization:** Docker & Docker Compose
+# 3. Create a local .env file for development (if needed)
+# cp .env.development .env.local
 
-## 📁 Project Structure
-```text
-├── backend/           # Node.js backend services
-├── frontend/          # React + Vite frontend application
-├── .github/           # GitHub Actions workflow configurations
-├── doc/               # Documentation for deployment and development
-└── README.md          # Project overview
+# 4. Start the development server
+npm run dev
