@@ -1,8 +1,15 @@
-import Router from './Router';
-import './index.css';
+import React from 'react';
+import Navbar from './components/Navbar';
+import Hero from './components/Hero';
 
 function App() {
-  return <Router />;
+  return (
+    <div className="App">
+      <Navbar />
+      <Hero />
+      {/* اینجا می‌توانید بخش‌های دیگر سایت را اضافه کنید */}
+    </div>
+  );
 }
 
 export default App;
