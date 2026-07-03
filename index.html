@@ -1,122 +1,31 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pi Dao</title>
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 40px;
-      background: #f4f7fb;
-    }
-    button {
-      margin: 10px;
-      padding: 12px 20px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      background: #673ab7;
-      color: white;
-      font-size: 16px;
-    }
-    #status {
-      margin-top: 20px;
-      font-size: 14px;
-      color: #333;
-    }
-  </style>
-</head>
-<body>
-  <h1>Pi Dao</h1>
-  <p>Welcome to Pi Dao</p>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- تگ viewport برای واکنش‌گرا بودن در موبایل -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="PiDao - مدیریت تراکنش‌های شبکه Pi" />
+    <title>PiDao | پنل مدیریت تراکنش</title>
+    
+    <!-- فونت‌های پیشنهادی برای ظاهر بهتر فارسی (اختیاری) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100;400;700&display=swap" rel="stylesheet">
 
-  <button id="loginButton">Login with Pi</button>
-  <button id="payBtn">Pay 1 Pi</button>
-
-  <div id="status">Initializing...</div>
-
-  <script>
-    const statusDiv = document.getElementById("status");
-    const loginButton = document.getElementById("loginButton");
-    const payBtn = document.getElementById("payBtn");
-
-    function updateStatus(msg) {
-      statusDiv.textContent = msg;
-    }
-
-    window.onload = function () {
-      if (typeof Pi === "undefined") {
-        updateStatus("Error: Pi SDK not found.");
-        return;
+    <style>
+      /* استایل اولیه برای جلوگیری از پرش صفحه قبل از لود شدن React */
+      body {
+        margin: 0;
+        font-family: 'Vazirmatn', Tahoma, sans-serif;
+        background-color: #f4f7f6;
       }
+    </style>
+  </head>
+  <body>
+    <!-- این عنصر مهم‌ترین بخش است؛ React تمام کدهای شما را داخل این div تزریق می‌کند -->
+    <div id="root"></div>
 
-      Pi.init({
-        version: "2.0",
-        sandbox: true,
-        appId: "pidao-pi-2uk8",
-        clientId: "c_1Hj75SyO_wbM4BUaxgVzuOmplNnrDj_2pWxDUkD8Q",
-        redirectUri: "https://apppidaonkm2562.pinet.com/index.html"
-      });
-
-      updateStatus("SDK ready.");
-    };
-
-    loginButton.addEventListener("click", function () {
-      updateStatus("Authenticating...");
-      Pi.authenticate(["username"], function (payment) {
-        console.log("Incomplete payment found:", payment);
-      }).then(function (auth) {
-        console.log("Auth result:", auth);
-        if (auth && auth.user) {
-          updateStatus("Welcome @" + auth.user.username);
-        } else {
-          updateStatus("No user data received.");
-        }
-      }).catch(function (err) {
-        console.error("Auth Error:", err);
-        updateStatus("Auth Error: " + (err.message || "User cancelled"));
-      });
-    });
-
-    payBtn.addEventListener("click", function () {
-      updateStatus("Creating payment...");
-      Pi.createPayment(
-        {
-          amount: 1,
-          memo: "Test payment",
-          metadata: { orderId: "123" }
-        },
-        {
-          onReadyForServerApproval: async (paymentId) => {
-            updateStatus("Approving payment...");
-            await fetch("https://apppidaonkm2562.pinet.com/approve", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ paymentId })
-            });
-          },
-          onReadyForServerCompletion: async (paymentId, txid) => {
-            updateStatus("Completing payment...");
-            await fetch("https://apppidaonkm2562.pinet.com/complete", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ paymentId, txid })
-            });
-            updateStatus("Payment completed.");
-          },
-          onCancel: (paymentId) => {
-            updateStatus("Payment cancelled: " + paymentId);
-          },
-          onError: (error, payment) => {
-            console.log(error, payment);
-            updateStatus("Payment error.");
-          }
-        }
-      );
-    });
-  </script>
-</body>
+    <!-- در پروژه‌های Vite، فایل اصلی جاوااسکریپت از اینجا لود می‌شود -->
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
