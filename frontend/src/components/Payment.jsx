@@ -1,120 +1,78 @@
-import React, useState from 'react';
-import { useAuth } from '../context/AuthContext';
+import React, { useState } from 'react';
 
 const Payment = () => {
-  const { user, isAuthenticated } = useAuth();
-  const [amount, setAmount] = useState('');
-  const [status, setStatus] = useState('idle'); // idle | processing | success | error
-  const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
 
-  // تابع کمکی برای ارسال درخواست به بک‌اِند
-  const callBackend = async (endpoint, body) => {
-    const response = await fetch(`http://localhost:5000${endpoint}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': import.meta.env.VITE_PI_API_KEY // کلیدی که در .env فرانت تعریف کردیم
-      },
-      body: JSON.stringify(body),
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Backend error');
-    }
-    return response;
-  };
+  // خواندن متغیرها از فایل .env فرانت‌اِند
+  const API_BASE_URL = import.meta.env.VITE_PI_BACKEND_URL;
+  const PI_API_KEY = import.meta.env.VITE_PI_API_KEY;
 
-  const handlePayment = async () => {
-    if (!isAuthenticated) {
-      alert("Please login with Pi Account first!");
-      return;
-    }
-
-    if (!amount || amount <= 0) {
-      setErrorMessage("Please enter a valid amount.");
-      setStatus('error');
-      return;
-    }
-
-    setStatus('processing');
-    setErrorMessage('');
+  const handlePayment = async (paymentData) => {
+    setLoading(true);
+    setMessage('');
 
     try {
-      // ۱. ایجاد درخواست پرداخت در Pi Browser
-      const payment = await window.Pi.createPayment({
-        amount: parseFloat(amount),
-        memo: "Contribution to PiDao Project",
-        metadata: {
-          userId: user.username,
-          projectId: "pidao-001"
+      // مرحله اول: ارسال درخواست برای تایید اولیه به بک‌اِند
+      const response = await fetch(`${API_BASE_URL}/api/payment/approve`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // ارسال کلید امنیتی در هدر برای تایید هویت درخواست توسط بک‌اِند
+          'x-api-key': PI_API_KEY 
+        },
+        body: JSON.stringify(paymentData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage('درخواست با موفقیت تایید شد. در حال پردازش پرداخت...');
+        
+        // مرحله دوم: تماس با بک‌اِند برای نهایی کردن تراکنش (بعد از تایید شبکه Pi)
+        // فرض بر این است که پرداخت در شبکه Pi انجام شده و حالا باید در دیتابیس ثبت شود
+        const completeResponse = await fetch(`${API_BASE_URL}/api/payment/complete`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': PI_API_KEY
+          },
+          body: JSON.stringify({
+            transactionId: data.transactionId, // آی‌دی که از مرحله قبل گرفتیم
+            paymentDetails: paymentData
+          }),
+        });
+
+        if (completeResponse.ok) {
+          setMessage('🎉 پرداخت با موفقیت انجام شد و در سیستم ثبت گردید!');
+        } else {
+          const errorData = await completeResponse.json();
+          throw new Error(errorData.message || 'خطا در ثبت نهایی پرداخت');
         }
-      });
 
-      console.log("Payment initiated:", payment);
-
-      // ۲. مرحله Approve در بک‌اِند
-      // ما paymentId را از Pi دریافت می‌کنیم و به بک‌اِند می‌فرستیم تا تایید کند
-      await callBackend('/approve', { paymentId: payment.paymentId });
-      console.log("Payment approved by backend");
-
-      // ۳. مرحله Complete در بک‌اِند
-      // در دنیای واقعی، ما باید txid را هم داشته باشیم. 
-      // در اینجا فرض می‌کنیم فرانت‌اند اطلاعات لازم را از نتیجه تراکنش می‌گیرد.
-      // نکته: برای تست ساده، فعلاً txid را به صورت موقت می‌فرستیم یا از اوبجکت payment می‌گیریم
-      await callBackend('/complete', { 
-        paymentId: payment.paymentId, 
-        txid: payment.txid || "dummy_txid_for_test" 
-      });
-
-      console.log("Payment completed successfully!");
-      setStatus('success');
-      setAmount(''); // خالی کردن فیلد بعد از موفقیت
-
+      } else {
+        throw new Error(data.message || 'خطا در تایید پرداخت');
+      }
     } catch (error) {
-      console.error("Payment error:", error);
-      setStatus('error');
-      setErrorMessage(error.message || "Transaction failed or was cancelled.");
+      console.error('Payment Error:', error);
+      setMessage(`❌ خطا: ${error.message}`);
+    } finally {
+      setLoading(false);
     }
   };
-
-  if (!isAuthenticated) {
-    return (
-      <div className="payment-card locked">
-        <h3>Join the DAO</h3>
-        <p>Please login with your Pi Account to contribute to the project.</p>
-      </div>
-    );
-  }
 
   return (
     <div className="payment-container">
-      <div className={`payment-card ${status === 'success' ? 'success' : ''}`}>
-        <h2>Contribute to PiDao</h2>
-        <p>Support the ecosystem by sending Pi tokens.</p>
-
-        <div className="payment-input-group">
-          <label>Amount (Pi)</label>
-          <input
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="0.00"
-            disabled={status === 'processing'}
-          />
-        </div>
-
-        <button
-          className={`btn-pay ${status === 'processing' ? 'processing' : ''}`}
-          onClick={handlePayment}
-          disabled={status === 'processing'}
-        >
-          {status === 'processing' ? 'Processing...' : `Pay ${amount || 0} Pi`}
-        </button>
-
-        {status === 'error' && <div className="alert error">{errorMessage}</div>}
-        {status === 'success' && <div className="alert success">✅ Payment Verified! Thank you.</div>}
-      </div>
+      <h2>پرداخت امن با شبکه Pi</h2>
+      {message && <div className={`message ${message.includes('❌') ? 'error' : 'success'}`}>{message}</div>}
+      
+      {/* در اینجا دکمه یا فرم پرداخت شما قرار می‌گیرد */}
+      <button 
+        disabled={loading} 
+        onClick={() => handlePayment({ amount: 10, currency: 'PI' })}
+      >
+        {loading ? 'در حال پردازش...' : 'پرداخت ۱۰ Pi'}
+      </button>
     </div>
   );
 };
