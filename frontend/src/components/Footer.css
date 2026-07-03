@@ -1,0 +1,30 @@
+import React from 'react';
+import './Footer.css';
+
+const Footer = () => {
+  return (
+    <footer className="footer">
+      <div className="footer-content">
+        <a href="/" className="footer-logo">PiDao</a>
+        
+        <ul className="footer-links">
+          <li><a href="/about">About Us</a></li>
+          <li><a href="/services">Services</a></li>
+          <li><a href="/privacy">Privacy Policy</a></li>
+          <li><a href="/contact">Contact</a></li>
+        </ul>
+
+        <div className="footer-socials">
+          {/* اینجا می‌توانی لینک شبکه‌های اجتماعی را اضافه کنی */}
+          <span>Follow us on Twitter • GitHub • LinkedIn</span>
+        </div>
+      </div>
+
+      <div className="footer-bottom">
+        <p>&copy; {new Date().getFullYear()} PiDao. All rights reserved.</p>
+      </div>
+    </footer>
+  );
+};
+
+export default Footer;
