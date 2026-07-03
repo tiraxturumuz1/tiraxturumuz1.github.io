@@ -1,14 +1,25 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Pi Pay</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pi Dao</title>
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 </head>
 <body>
+  <button id="loginButton">Login with Pi</button>
   <button id="payBtn">Pay 1 Pi</button>
+  <div id="status"></div>
 
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
   <script>
+    const statusDiv = document.getElementById("status");
+    const loginButton = document.getElementById("loginButton");
+    const payBtn = document.getElementById("payBtn");
+
+    function updateStatus(msg) {
+      statusDiv.textContent = msg;
+    }
+
     Pi.init({
       version: "2.0",
       sandbox: true,
@@ -17,7 +28,26 @@
       redirectUri: "https://apppidaonkm2562.pinet.com/index.html"
     });
 
-    document.getElementById("payBtn").onclick = () => {
+    loginButton.addEventListener("click", function () {
+      updateStatus("Authenticating...");
+      Pi.authenticate(["username"], function (payment) {
+        console.log("Incomplete payment found:", payment);
+      }).then(function (auth) {
+        console.log("Auth result:", auth);
+        if (auth && auth.user) {
+          updateStatus("Welcome @" + auth.user.username);
+        } else {
+          updateStatus("No user data received.");
+        }
+      }).catch(function (err) {
+        console.error("Auth Error:", err);
+        updateStatus("Auth Error: " + (err.message || "User cancelled"));
+      });
+    });
+
+    payBtn.addEventListener("click", function () {
+      updateStatus("Creating payment...");
+
       Pi.createPayment(
         {
           amount: 1,
@@ -26,6 +56,7 @@
         },
         {
           onReadyForServerApproval: async (paymentId) => {
+            updateStatus("Approving payment...");
             await fetch("https://apppidaonkm2562.pinet.com/approve", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -33,15 +64,24 @@
             });
           },
           onReadyForServerCompletion: async (paymentId, txid) => {
+            updateStatus("Completing payment...");
             await fetch("https://apppidaonkm2562.pinet.com/complete", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ paymentId, txid })
             });
+            updateStatus("Payment completed.");
+          },
+          onCancel: (paymentId) => {
+            updateStatus("Payment cancelled: " + paymentId);
+          },
+          onError: (error, payment) => {
+            console.log(error, payment);
+            updateStatus("Payment error.");
           }
         }
       );
-    };
+    });
   </script>
 </body>
 </html>
