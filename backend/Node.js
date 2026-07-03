@@ -7,7 +7,7 @@ app.use(express.json());
 
 const PI_API_KEY = process.env.PI_API_KEY;
 const PI_BASE = "https://api.minepi.com/v2";
-const PUBLIC_URL = process.env.PUBLIC_URL || "https://your-domain.com";
+const PUBLIC_URL = process.env.PUBLIC_URL || "https://apppidaonkm2562.pinet.com";
 
 app.get("/pi/metadata", (req, res) => {
   res.json({
