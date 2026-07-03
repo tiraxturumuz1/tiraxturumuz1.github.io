@@ -1,13 +1,32 @@
-:root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  background-color: #ffffff;
-  color: #213547;
+/* تنظیمات پایه برای تمام مرورگرها */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.5;
+    color: #111827;
+    background-color: #ffffff;
+    overflow-x: hidden; /* جلوگیری از اسکرول افقی مزاحم */
+}
+
+h1, h2, h3 {
+    line-height: 1.2;
+}
+
+a {
+    transition: all 0.3s ease;
+}
+
+/* انیمیشن ساده برای وقتی صفحه لود می‌شود */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.App {
+    animation: fadeIn 0.8s ease-out;
 }
