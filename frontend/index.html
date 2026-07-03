@@ -1,48 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pi Dao</title>
-</head>
-<body>
-  <button id="payBtn">Pay 1 Pi</button>
-
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-  <script>
-    Pi.init({
-      version: "2.0",
-      sandbox: true,
-      appId: "pidao-pi-2uk8",
-      clientId: "c_1Hj75SyO_wbM4BUaxgVzuOmplNnrDj_2pWxDUkD8Q",
-      redirectUri: "https://apppidaonkm2562.pinet.com/index.html"
-    });
-
-    document.getElementById("payBtn").onclick = () => {
-      Pi.createPayment(
-        {
-          amount: 1,
-          memo: "Test payment",
-          metadata: { orderId: "123" }
-        },
-        {
-          onReadyForServerApproval: async (paymentId) => {
-            await fetch("https://apppidaonkm2562.pinet.com/approve", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ paymentId })
-            });
-          },
-          onReadyForServerCompletion: async (paymentId, txid) => {
-            await fetch("https://apppidaonkm2562.pinet.com/complete", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ paymentId, txid })
-            });
-          }
-        }
-      );
-    };
-  </script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pi DAO - Decentralized Government</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- توجه کنید: مسیر اسکریپت حتماً باید با /src شروع شود -->
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
