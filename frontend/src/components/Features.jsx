@@ -1,49 +1,26 @@
-.features-container {
-    padding: 60px 5%;
-    background-color: #ffffff;
-    text-align: center;
-}
+import React from 'react';
+import './Features.css';
 
-.features-title {
-    font-size: 32px;
-    color: #111827;
-    margin-bottom: 40px;
-}
+const Features = () => {
+  const features = [
+    { title: "Decentralized Governance", desc: "No central authority. Every decision is made by the community." },
+    { title: "Transparent Voting", desc: "On-chain voting ensures every vote is visible and unchangeable." },
+    { title: "Automated Execution", desc: "Smart contracts execute decisions automatically once passed." }
+  ];
 
-.features-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 30px;
-}
+  return (
+    <section id="features" className="features">
+      <h2 className="features-title">Why PiDao?</h2>
+      <div className="features-grid">
+        {features.map((f, i) => (
+          <div key={i} className="feature-card">
+            <h3>{f.title}</h3>
+            <p>{f.desc}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+};
 
-.feature-card {
-    padding: 30px;
-    border-radius: 15px;
-    background-color: #f9fafb;
-    border: 1px solid #e5e7eb;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.feature-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.05);
-    border-color: #2563eb;
-}
-
-.feature-icon {
-    font-size: 40px;
-    margin-bottom: 20px;
-    display: block;
-}
-
-.feature-card h3 {
-    font-size: 20px;
-    color: #1f2937;
-    margin-bottom: 15px;
-}
-
-.feature-card p {
-    font-size: 15px;
-    color: #6b7280;
-    line-height: 1.6;
-}
+export default Features;
