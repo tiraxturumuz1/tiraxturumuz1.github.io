@@ -1,127 +1,122 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pi Dao</title>
-    <style>
-        body { font-family: sans-serif; text-align: center; padding-top: 50px; background: #f5f5f5; }
-        .container { background: white; padding: 30px; border-radius: 16px; display: inline-block; box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 90%; }
-        h1 { color: #673ab7; }
-        button { padding: 12px 25px; font-size: 16px; border: none; border-radius: 25px; cursor: pointer; margin-top: 20px; }
-        .login-btn { background: #673ab7; color: white; display: none; }
-        .pay-btn { background: #4CAF50; color: white; display: none; }
-        .logout-btn { background: none; color: #ff5252; border: 1px solid #ff5252; margin-top: 10px; }
-        #status { margin-top: 15px; font-weight: bold; }
-        #user-info { display: none; margin-top: 20px; }
-        .username { font-size: 18px; color: #333; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pi Dao</title>
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 40px;
+      background: #f4f7fb;
+    }
+    button {
+      margin: 10px;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #673ab7;
+      color: white;
+      font-size: 16px;
+    }
+    #status {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #333;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Pi Dao</h1>
-        <p>Please log in to continue</p>
+  <h1>Pi Dao</h1>
+  <p>Welcome to Pi Dao</p>
 
-        <button id="login-button" class="login-btn">Login with Pi</button>
+  <button id="loginButton">Login with Pi</button>
+  <button id="payBtn">Pay 1 Pi</button>
 
-        <div id="user-info">
-            <div class="username" id="username-display"></div>
-            <button id="pay-button" class="pay-btn">Pay 1 Pi (Test)</button>
-            <div id="payment-status"></div>
-            <button class="logout-btn" onclick="location.reload()">Logout</button>
-        </div>
+  <div id="status">Initializing...</div>
 
-        <div id="status">Initializing SDK...</div>
-    </div>
+  <script>
+    const statusDiv = document.getElementById("status");
+    const loginButton = document.getElementById("loginButton");
+    const payBtn = document.getElementById("payBtn");
 
-    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-    <script>
-        const statusDiv = document.getElementById('status');
-        const loginBtn = document.getElementById('login-button');
-        const userInfoDiv = document.getElementById('user-info');
-        const usernameDisplay = document.getElementById('username-display');
-        const payBtn = document.getElementById('pay-button');
-        const paymentStatus = document.getElementById('payment-status');
+    function updateStatus(msg) {
+      statusDiv.textContent = msg;
+    }
 
-        // 1. راه‌اندازی Pi SDK
-        Pi.init({
-            version: "2.0",
-            sandbox: true,
-            appId: "pidao-pi-2uk8",
-            clientId: "c_1Hj75SyO_wbM4BUaxgVzuOmplNnrDj_2pWxDUkD8Q",
-            redirectUri: "https://tiraxturumuz1.github.io/index.html"
-        }).then(() => {
-            statusDiv.textContent = "SDK Connected! Please log in.";
-            loginBtn.style.display = "inline-block";
-        }).catch(err => {
-            statusDiv.textContent = "Init error: " + err.message;
-        });
+    window.onload = function () {
+      if (typeof Pi === "undefined") {
+        updateStatus("Error: Pi SDK not found.");
+        return;
+      }
 
-        // 2. لاگین و گرفتن مجوز کیف پول
-        loginBtn.addEventListener('click', () => {
-            Pi.authenticate(['username', 'payments'], (incompletePayment) => {
-                console.log('Incomplete payment found:', incompletePayment);
-            }).then(auth => {
-                if (auth && auth.user) {
-                    usernameDisplay.textContent = "@" + auth.user.username;
-                    userInfoDiv.style.display = "block";
-                    loginBtn.style.display = "none";
-                    payBtn.style.display = "inline-block";
-                    statusDiv.textContent = "Logged in. You can now pay.";
-                } else {
-                    statusDiv.textContent = "Login failed: no user data.";
-                }
-            }).catch(err => {
-                statusDiv.textContent = "Auth error: " + (err.message || err);
+      Pi.init({
+        version: "2.0",
+        sandbox: true,
+        appId: "pidao-pi-2uk8",
+        clientId: "c_1Hj75SyO_wbM4BUaxgVzuOmplNnrDj_2pWxDUkD8Q",
+        redirectUri: "https://apppidaonkm2562.pinet.com/index.html"
+      });
+
+      updateStatus("SDK ready.");
+    };
+
+    loginButton.addEventListener("click", function () {
+      updateStatus("Authenticating...");
+      Pi.authenticate(["username"], function (payment) {
+        console.log("Incomplete payment found:", payment);
+      }).then(function (auth) {
+        console.log("Auth result:", auth);
+        if (auth && auth.user) {
+          updateStatus("Welcome @" + auth.user.username);
+        } else {
+          updateStatus("No user data received.");
+        }
+      }).catch(function (err) {
+        console.error("Auth Error:", err);
+        updateStatus("Auth Error: " + (err.message || "User cancelled"));
+      });
+    });
+
+    payBtn.addEventListener("click", function () {
+      updateStatus("Creating payment...");
+      Pi.createPayment(
+        {
+          amount: 1,
+          memo: "Test payment",
+          metadata: { orderId: "123" }
+        },
+        {
+          onReadyForServerApproval: async (paymentId) => {
+            updateStatus("Approving payment...");
+            await fetch("https://apppidaonkm2562.pinet.com/approve", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ paymentId })
             });
-        });
-
-        // 3. دکمهٔ پرداخت
-        payBtn.addEventListener('click', async () => {
-            payBtn.disabled = true;
-            paymentStatus.textContent = "Creating payment... (if it spins, proceed to Developer Portal)";
-            
-            // باز کردن کیف پول برای اطمینان (اگر قفل باشد، رمز می‌خواهد)
-            try {
-                await Pi.openWallet();
-            } catch (e) {
-                console.log("Wallet already open or error:", e);
-            }
-
-            // ایجاد پرداخت
-            Pi.createPayment({
-                amount: 1,
-                memo: "Test payment - Pi Dao",
-                metadata: { orderId: "12345" }
-            }, {
-                // این callback ها برای Frontend mode کار می‌کنند، هرچند در Sandbox شاید بی‌صدا باشند
-                onReadyForServerApproval: (paymentId) => {
-                    console.log("Ready for approval:", paymentId);
-                    paymentStatus.textContent = "Payment created. Now approve it manually in Developer Portal (see instructions).";
-                },
-                onReadyForServerCompletion: (paymentId, txid) => {
-                    console.log("Completed:", paymentId, txid);
-                    paymentStatus.textContent = "Payment completed!";
-                    payBtn.disabled = false;
-                },
-                onCancel: (paymentId) => {
-                    console.log("Cancelled:", paymentId);
-                    paymentStatus.textContent = "Payment cancelled.";
-                    payBtn.disabled = false;
-                },
-                onError: (error, payment) => {
-                    console.error("Error:", error, payment);
-                    paymentStatus.textContent = "Error: " + error.message;
-                    payBtn.disabled = false;
-                }
-            }).then(result => {
-                console.log("Payment resolved:", result);
-            }).catch(error => {
-                console.error("Payment rejected:", error);
-                paymentStatus.textContent = "Payment failed: " + (error.message || error);
-                payBtn.disabled = false;
+          },
+          onReadyForServerCompletion: async (paymentId, txid) => {
+            updateStatus("Completing payment...");
+            await fetch("https://apppidaonkm2562.pinet.com/complete", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ paymentId, txid })
             });
-        });
-    </script>
+            updateStatus("Payment completed.");
+          },
+          onCancel: (paymentId) => {
+            updateStatus("Payment cancelled: " + paymentId);
+          },
+          onError: (error, payment) => {
+            console.log(error, payment);
+            updateStatus("Payment error.");
+          }
+        }
+      );
+    });
+  </script>
 </body>
 </html>
