@@ -1,30 +1,39 @@
-import React from 'react';
-import './Footer.css';
+.footer {
+    background: var(--dark);
+    color: white;
+    padding: 60px 5% 30px 5%;
+    text-align: center;
+}
 
-const Footer = () => {
-  return (
-    <footer className="footer">
-      <div className="footer-content">
-        <a href="/" className="footer-logo">PiDao</a>
-        
-        <ul className="footer-links">
-          <li><a href="/about">About Us</a></li>
-          <li><a href="/services">Services</a></li>
-          <li><a href="/privacy">Privacy Policy</a></li>
-          <li><a href="/contact">Contact</a></li>
-        </ul>
+.footer-logo {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--primary);
+    text-decoration: none;
+    display: block;
+    margin-bottom: 20px;
+}
 
-        <div className="footer-socials">
-          {/* اینجا می‌توانی لینک شبکه‌های اجتماعی را اضافه کنی */}
-          <span>Follow us on Twitter • GitHub • LinkedIn</span>
-        </div>
-      </div>
+.footer-links {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    list-style: none;
+    margin-bottom: 40px;
+}
 
-      <div className="footer-bottom">
-        <p>&copy; {new Date().getFullYear()} PiDao. All rights reserved.</p>
-      </div>
-    </footer>
-  );
-};
+.footer-links a {
+    color: #94a3b8;
+    text-decoration: none;
+}
 
-export default Footer;
+.footer-links a:hover {
+    color: white;
+}
+
+.copyright {
+    color: #64748b;
+    font-size: 14px;
+    border-top: 1px solid #1e293b;
+    padding-top: 30px;
+}
