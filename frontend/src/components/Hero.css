@@ -1,22 +1,20 @@
 .hero {
+    padding: 100px 5% 60px 5%;
     text-align: center;
-    padding: 80px 20px;
-    background-color: #f0f7ff;
+    background: radial-gradient(circle at top, #eef2ff 0%, #ffffff 100%);
 }
 
 .hero h1 {
-    font-size: 48px;
-    color: #111827;
+    font-size: 3.5rem;
     margin-bottom: 20px;
-}
-
-.hero h1 span {
-    color: #2563eb;
+    background: linear-gradient(to right, var(--primary), var(--secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 .hero p {
-    font-size: 18px;
-    color: #4b5563;
+    font-size: 1.2rem;
+    color: var(--gray);
     max-width: 600px;
     margin: 0 auto 30px auto;
 }
@@ -28,19 +26,20 @@
 }
 
 .btn-primary {
-    background-color: #2563eb;
+    background: var(--primary);
     color: white;
     padding: 12px 30px;
-    border-radius: 50px;
+    border-radius: 8px;
+    font-weight: 600;
     text-decoration: none;
-    font-weight: bold;
 }
 
 .btn-secondary {
-    border: 2px solid #2563eb;
-    color: #2563eb;
+    background: white;
+    color: var(--dark);
     padding: 12px 30px;
-    border-radius: 50px;
+    border-radius: 8px;
+    font-weight: 600;
+    border: 1px solid #e2e8f0;
     text-decoration: none;
-    font-weight: bold;
 }
