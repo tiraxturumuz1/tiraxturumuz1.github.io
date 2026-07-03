@@ -1,16 +1,40 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+// استفاده از HashRouter برای حل مشکل 404 در GitHub Pages
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import axiosClient from '../lib/axiosClient';
-// فرض بر این است که تایپ‌ها و کامپوننت‌های دیگر را از فایل‌های اصلی خودتان وارد می‌کنید
 import { User } from '../types/user'; 
 import SignIn from '../components/SignIn';
 import Shop from '../pages/Shop';
 import EngagementTasksPage from '../pages/EngagementTasksPage';
 
-// این کامپوننت جایگزین حالت لودینگ فعلی شما می‌شود
+/**
+ * کامپوننت نمایش وضعیت لودینگ
+ * اگر فرآیند احراز هویت بیش از حد طول بکشد، کاربر این را می‌بیند
+ */
 const LoadingScreen = () => (
-  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-    <p>Authenticating...</p> 
+  <div style={{ 
+    display: 'flex', 
+    flexDirection: 'column',
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    height: '100vh',
+    fontFamily: 'sans-serif' 
+  }}>
+    <div className="spinner" style={{ 
+      border: '4px solid #f3f3f3', 
+      borderTop: '4px solid #3498db', 
+      borderRadius: '50%', 
+      width: '40px', 
+      height: '40px', 
+      animation: 'spin 2s linear infinite' 
+    }}></div>
+    <p style={{ marginTop: '20px', color: '#555' }}>Authenticating...</p>
+    <style>{`
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `}</style>
   </div>
 );
 
@@ -20,44 +44,48 @@ const AppRouter = () => {
 
   useEffect(() => {
     const checkUserStatus = async () => {
-      // ایجاد یک تایمر برای جلوگیری از گیر کردن ابدی (Timeout)
+      // ۱. ایجاد یک تایمر امنیتی (Fail-safe)
+      // اگر بعد از ۶ ثانیه پاسخی از بک‌اند نیامد، لودینگ را قطع کن تا کاربر بتواند دکمه ورود را ببیند
       const timeoutId = setTimeout(() => {
         if (isLoading) {
-          console.warn("Auth request timed out. Moving out of loading state.");
+          console.warn("⚠️ Auth Timeout: Backend is not responding. Breaking out of loading state.");
           setIsLoading(false);
         }
-      }, 5000); // اگر بعد از 5 ثانیه خبری نشد، از لودینگ خارج شو
+      }, 6000);
 
       try {
-        console.log("Attempting to fetch user status from:", axiosClient.defaults.baseURL);
+        console.log("🔍 Checking user status via:", axiosClient.defaults.baseURL);
         
+        // تلاش برای گرفتن اطلاعات کاربر از بک‌اند
         const response = await axiosClient.get("/user/me");
         
         if (response.data) {
           setUser(response.data);
-          console.log("User authenticated successfully:", response.data);
+          console.log("✅ User authenticated:", response.data);
         }
       } catch (error: any) {
-        // اینجا تحلیل خطا برای شما بسیار مهم است
+        // تحلیل خطا در کنسول برای عیب‌یابی سریع
         if (error.response) {
-          // سرور پاسخ داده اما کد خطا (مثل 401 یا 404)
-          console.error("Server Error:", error.response.status, error.response.data);
+          // سرور پاسخ داده (مثلاً خطای 401 یعنی کاربر لاگین نیست)
+          console.error("❌ Server Error:", error.response.status, error.response.data);
         } else if (error.request) {
-          // درخواست فرستاده شده اما پاسخی دریافت نشده (احتمالاً مشکل CORS یا آدرس اشتباه)
-          console.error("Network Error: No response received. Check CORS or Backend URL.");
+          // درخواست ارسال شده اما پاسخی دریافت نشده (مشکل CORS یا آدرس اشتباه بک‌اند)
+          console.error("❌ Network Error: No response from backend. Check your backendURL in index.html and CORS settings.");
         } else {
-          console.error("Error setting up request:", error.message);
+          // خطای دیگر
+          console.error("❌ Error:", error.message);
         }
       } finally {
-        // اطمینان از اینکه لودینگ حتماً تمام می‌شود
+        // ۲. در هر صورت (موفقیت یا خطا) لودینگ را تمام کن
         setIsLoading(false);
         clearTimeout(timeoutId);
       }
     };
 
     checkUserStatus();
-  }, []);
+  }, []); // آرایه خالی یعنی فقط یک بار هنگام لود شدن اپلیکیشن اجرا شود
 
+  // اگر در حالت لودینگ بودیم، صفحه انتظار را نشان بده
   if (isLoading) {
     return <LoadingScreen />;
   }
@@ -65,18 +93,19 @@ const AppRouter = () => {
   return (
     <Router>
       <Routes>
-        {/* اگر کاربر لاگین بود، به صفحه اصلی/شاپ برود، در غیر این صورت به صفحه ورود */}
+        {/* مسیر اصلی: اگر کاربر لاگین بود به Shop، در غیر این صورت به SignIn */}
         <Route 
           path="/" 
           element={user ? <Shop /> : <SignIn />} 
         />
         
+        {/* مسیر تسک‌ها: فقط برای کاربران لاگین شده */}
         <Route 
           path="/tasks" 
           element={user ? <EngagementTasksPage /> : <Navigate to="/" />} 
         />
 
-        {/* مسیرهای دیگر را اینجا اضافه کنید */}
+        {/* مسیر پیش‌فرض: هدایت به روت اصلی */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
