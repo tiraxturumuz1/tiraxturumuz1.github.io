@@ -1,26 +1,18 @@
-## ⚙️ Setup & Installation
+ 🏛️ PI DAO 
+ Decentralized International Government
 
-Follow these steps to get the development environment running on your local machine.
+PI DAO is a pioneering decentralized autonomous organization designed to redefine global governance through blockchain technology. We aim to build a transparent, borderless, and community-driven international governance framework.
 
-### 1. Prerequisites
-Make sure you have the following installed:
-- [Node.js](https://nodejs.org/) (Version 18 or higher recommended)
-- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
-- [Docker](https://www.docker.com/) (Optional, for containerized deployment)
+ 🌐 Vision
+To establish a digital sovereignty where decisions are mad through verifiable, on-chain voting and decentralized consensus.
+
+ 🚀 Gettin Started
+To join the infrastructure development, please follow our technical guide:
+👉 [Technical Installation & Setup Guide](docs/installation.md)
+## 🛠️ Core Pillars
+- **Decentralized Voting:** Transparent governance via smart contracts.
+- **Global Identity:** Borderless participation for ever citizen.
+- **Autonomous Treasury:** Managed by community consensus.
 
 ---
-
-### 2. Frontend Setup (React + Vite)
-The frontend is a Single Page Application (SPA) built with Vite.
-```bash
-# 1. Navigate to the frontend directory
-cd frontend
-
-# 2. Install all necessary dependencies
-npm install
-
-# 3. Create a local .env file for development (if needed)
-# cp .env.development .env.local
-
-# 4. Start the development server
-npm run dev
+*Built by the PI DAO Development Team*
