@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    restart: always
+    env_file: ./backend/.env
+    networks:
+      - pi_network
+
+  frontend:
+    build: ./frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - pi_network
+
+  reverse-proxy:
+    build: ./reverse-proxy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./reverse-proxy/docker/nginx.conf.template:/etc/nginx/templates/nginx.conf.template
+      - ./certbot/conf:/etc/letsencrypt
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - pi_network
+
+networks:
+  pi_network:
+    driver: bridge
