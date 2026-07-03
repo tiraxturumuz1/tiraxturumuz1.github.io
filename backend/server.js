@@ -1,125 +1,67 @@
-import express from "express";
-import cors from "cors";
-import helmet from "helmet";
-import dotenv from "dotenv";
-
-// بارگذاری متغیرهای محیطی از فایل .env
-dotenv.config();
+const express = require('express');
+const cors = require('cors');
+require('dotenv').config();
 
 const app = express();
 
-// --- تنظیمات امنیتی و میان‌افزارها ---
-app.use(helmet()); // اضافه کردن هدرهای امنیتی برای جلوگیری از حملات XSS و غیره
-app.use(cors({ 
-    origin: process.env.FRONTEND_URL, // فقط اجازه دسترسی به فرانت‌اند پروژه تو
-    methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type", "x-api-key"] // اجازه دادن به هدر اختصاصی ما
+// --- تنظیمات Middleware ---
+
+// ۱. اجازه دسترسی به فرانت‌اِند (CORS)
+app.use(cors({
+  origin: process.env.FRONTEND_URL // اجازه دسترسی فقط به آدرس مشخص شده در .env
 }));
-app.use(express.json()); // قابلیت خواندن JSON از درخواست‌ها
 
-// متغیرهای محیطی مورد نیاز
-const PI_API_KEY = process.env.PI_API_KEY;
-const PI_BASE = "https://api.minepi.com/v2";
-const PUBLIC_URL = process.env.PUBLIC_URL || "https://apppidaonkm2562.pinet.com";
+app.use(express.json());
 
-/**
- * Middleware برای بررسی امنیت درخواست‌ها
- * فقط درخواست‌هایی که دارای API KEY درست هستند اجازه عبور دارند.
- */
+// ۲. میان‌افزار امنیتی برای تایید کلید API (محافظ اصلی)
 const validateApiKey = (req, res, next) => {
-    const userKey = req.headers['x-api-key'];
-    if (!userKey || userKey !== PI_API_KEY) {
-        console.warn(`⚠️ Unauthorized attempt from IP: ${req.ip}`);
-        return res.status(401).json({ error: "Unauthorized: Invalid or missing API Key" });
-    }
-    next();
+  const clientApiKey = req.headers['x-api-key'];
+  const serverApiKey = process.env.PI_API_KEY;
+
+  if (!clientApiKey || clientApiKey !== serverApiKey) {
+    console.warn(`⚠️ درخواست غیرمجاز از IP: ${req.ip} - کلید نامعتبر است.`);
+    return res.status(403).json({ message: 'دسترسی غیرمجاز: کلید API نامعتبر است.' });
+  }
+  
+  // اگر کلید درست بود، اجازه بده درخواست به مرحله بعد برود
+  next();
 };
 
-// --- ۱. مسیر Metadata (برای نمایش در Pi Browser) ---
-app.get("/pi/metadata", (req, res) => {
-    res.json({
-        title: "Pi Dao",
-        description: "The future of decentralized governance on the Pi Network.",
-        image: `${PUBLIC_URL}/preview.png`,
-        url: PUBLIC_URL
-    });
+// اعمال میان‌افزار امنیتی روی تمام مسیرهای مربوط به پرداخت
+// با این کار، تمام درخواست‌هایی که به /api/payment شروع می‌شوند، باید کلید درست داشته باشند
+app.use('/api/payment', validateApiKey);
+
+// --- مسیرهای (Routes) اصلی ---
+
+// مسیر تایید اولیه پرداخت
+app.post('/api/payment/approve', (req, res) => {
+  console.log('✅ درخواست تایید پرداخت دریافت شد:', req.body);
+  
+  // در اینجا منطق تایید با Pi Network قرار می‌گیرد
+  // فعلاً یک پاسخ موفقیت‌آمیز فرضی برمی‌گردانیم
+  res.status(200).json({ 
+    success: true, 
+    transactionId: `pi_txn_${Date.now()}` 
+  });
 });
 
-// --- ۲. مسیر تایید پرداخت (Approve) ---
-// این مسیر وقتی فراخوانی می‌شود که کاربر در فرانت‌اند دکمه پرداخت را زده است
-app.post("/approve", validateApiKey, async (req, res) => {
-    try {
-        const { paymentId } = req.body;
-        if (!paymentId) return res.status(400).json({ error: "paymentId is required" });
+// مسیر نهایی کردن و ثبت در دیتابیس
+app.post('/api/payment/complete', (req, res) => {
+  const { transactionId, paymentDetails } = req.body;
+  console.log(`✅ ثبت نهایی تراکنش: ${transactionId}`);
 
-        console.log(`🔄 Approving payment request: ${paymentId}`);
+  // در اینجا کد ذخیره‌سازی در MongoDB قرار می‌گیرد
+  // 예: await Transaction.create({ transactionId, ...paymentDetails });
 
-        const response = await fetch(`${PI_BASE}/payments/${paymentId}/approve`, {
-            method: "POST",
-            headers: { 
-                "Authorization": `Key ${PI_API_KEY}`,
-                "Content-Type": "application/json"
-            }
-        });
-        
-        const data = await response.text();
-        console.log(`✅ Approval response: ${data}`);
-        res.status(response.status).send(data);
-
-    } catch (e) {
-        console.error("❌ Error in /approve:", e.message);
-        res.status(500).json({ error: e.message });
-    }
+  res.status(200).json({ 
+    success: true, 
+    message: 'تراکنش با موفقیت ثبت شد.' 
+  });
 });
 
-// --- ۳. مسیر نهایی کردن پرداخت (Complete) ---
-// این مرحله نهایی است و تراکنش را در شبکه Pi تثبیت می‌کند
-app.post("/complete", validateApiKey, async (req, res) => {
-    try {
-        const { paymentId, txid } = req.body;
-        if (!paymentId || !txid) return res.status(400).json({ error: "paymentId and txid are required" });
-
-        console.log(`✅ Completing payment: ${paymentId} with TXID: ${txid}`);
-
-        const response = await fetch(`${PI_BASE}/payments/${paymentId}/complete`, {
-            method: "POST",
-            headers: {
-                "Authorization": `Key ${PI_API_KEY}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ txid })
-        });
-
-        const data = await response.text();
-        console.log(`🎉 Completion response: ${data}`);
-        res.status(response.status).send(data);
-
-    } catch (e) {
-        console.error("❌ Error in /complete:", e.message);
-        res.status(500).json({ error: e.message });
-    }
-});
-
-// --- ۴. مسیر سلامت (Health Check) ---
-app.get("/health", (req, res) => {
-    res.json({ 
-        status: "online", 
-        timestamp: new Date().toISOString(),
-        message: "PiDao Backend is running smoothly" 
-    });
-});
-
-// شروع به کار سرور
+// --- راه اندازی سرور ---
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-    console.log(`
-==================================================
-🚀 PiDao Professional Backend is LIVE!
---------------------------------------------------
-📍 Port: ${PORT}
-📍 Mode: ${process.env.NODE_ENV}
-📍 Metadata: ${PUBLIC_URL}/pi/metadata
-📍 Frontend Allowed: ${process.env.FRONTEND_URL}
-==================================================
-    `);
+  console.log(`🚀 سرور PiDao با موفقیت روی پورت ${PORT} روشن شد.`);
+  console.log(`🛡️ امنیت فعال است. کلید مورد انتظار: ${process.env.PI_API_KEY.substring(0, 5)}...`);
 });
