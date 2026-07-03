@@ -1,17 +1,34 @@
 import React from 'react';
-import './Navbar.css';
+import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
-  return (
-    <nav className="navbar">
-      <a href="/" className="logo">PiDao</a>
-      <ul className="nav-links">
-        <li><a href="#features">Features</a></li>
-        <li><a href="#poll">Governance</a></li>
-        <li><a href="#about">About</a></li>
-      </ul>
-    </nav>
-  );
+    const { user, isAuthenticated, login, logout } = useAuth();
+
+    return (
+        <nav className="navbar">
+            <div className="logo">PiDao</div>
+            
+            <div className="nav-links">
+                <a href="#features">Features</a>
+                <a href="#about">About</a>
+                
+                {/* اگر کاربر لاگین نکرده بود، دکمه Login را نشان بده */}
+                {!isAuthenticated ? (
+                    <button className="btn-login" onClick={login}>
+                        Login with Pi
+                    </button>
+                ) : (
+                    /* اگر کاربر لاگین کرده بود، نام او و دکمه Logout را نشان بده */
+                    <div className="user-menu">
+                        <span className="username">@{user?.username || 'User'}</span>
+                        <button className="btn-logout" onClick={logout}>
+                            Logout
+                        </button>
+                    </div>
+                )}
+            </div>
+        </nav>
+    );
 };
 
 export default Navbar;
