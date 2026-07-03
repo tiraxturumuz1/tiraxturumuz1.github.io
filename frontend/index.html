@@ -27,14 +27,14 @@
         },
         {
           onReadyForServerApproval: async (paymentId) => {
-            await fetch("https://YOUR-BACKEND-DOMAIN/approve", {
+            await fetch("https://apppidaonkm2562.pinet.com/approve", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ paymentId })
             });
           },
           onReadyForServerCompletion: async (paymentId, txid) => {
-            await fetch("https://YOUR-BACKEND-DOMAIN/complete", {
+            await fetch("https://apppidaonkm2562.pinet.com/complete", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ paymentId, txid })
