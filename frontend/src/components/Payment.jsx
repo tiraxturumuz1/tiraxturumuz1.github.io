@@ -36,7 +36,7 @@ const Payment = ({ onPaymentSuccess }) => {
       borderRadius: '8px',
       border: '1px solid #ddd',
       fontSize: '18px',
-      boxSizing: 'border-box', // برای اینکه عرض ورودی از کادر بیرون نزند
+      boxSizing: 'border-box',
       textAlign: 'center'
     },
     button: {
@@ -71,50 +71,62 @@ const Payment = ({ onPaymentSuccess }) => {
     setLoading(true);
     setError(null);
 
+    if (!window.Pi) {
+      setError('SDK پرداخت Pi در دسترس نیست. لطفاً برنامه را داخل مرورگر Pi اجرا کنید.');
+      setLoading(false);
+      return;
+    }
+
     try {
-      // ۱. ابتدا یک درخواست برای تایید اولیه به بک‌اِند می‌فرستیم
-      const approveRes = await fetch('http://localhost:5000/api/payment/approve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      const approveData = await approveRes.json();
-
-      if (approveData.success) {
-        const transactionId = approveData.transactionId;
-
-        // ۲. حالا اطلاعات پرداخت را برای ثبت نهایی در دیتابیس می‌فرستیم
-        const completeRes = await fetch('http://localhost:5000/api/payment/complete', {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'x-api-key': 'your_very_secure_api_key_123' // حتماً این کلید باید با فایل .env بک‌اِند یکی باشد
+      // 1. استفاده از SDK اصلی Pi به جای Fetch ساده
+      window.Pi.createPayment(
+        {
+          amount: parseFloat(amount), // مبلغی که کاربر وارد کرده
+          memo: 'PiDao Membership',
+          metadata: { orderId: `ORDER-${Date.now()}` }
+        },
+        {
+          onReadyForServerApproval: async (paymentId) => {
+            // این همان بخشی است که به بک‌اِند شما (پورت 3000) وصل می‌شود
+            await fetch('http://localhost:3000/approve', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ paymentId })
+            });
           },
-          body: JSON.stringify({
-            transactionId: transactionId,
-            paymentDetails: {
-              amount: parseFloat(amount),
-              currency: 'PI',
-              productName: 'PiDao Membership',
-              orderId: `ORDER-${Date.now()}`
+
+          onReadyForServerCompletion: async (paymentId, txid) => {
+            // تایید نهایی تراکنش
+            const response = await fetch('http://localhost:3000/complete', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ paymentId, txid })
+            });
+
+            if (response.ok) {
+              // اینجا صفحه موفقیت را نشان می‌دهیم
+              onPaymentSuccess(txid);
+            } else {
+              setError('خطا در تایید نهایی تراکنش.');
             }
-          })
-        });
 
-        const completeData = await completeRes.json();
+            setLoading(false);
+          },
 
-        if (completeData.success) {
-          // ۳. اگر همه چیز عالی بود، تابع موفقیت را که از App.jsx آمده صدا می‌زنیم
-          onPaymentSuccess(transactionId);
-        } else {
-          setError(completeData.message || 'خطا در ثبت تراکنش.');
+          onCancel: (paymentId) => {
+            setError('پرداخت توسط کاربر لغو شد.');
+            setLoading(false);
+          },
+
+          onError: (error) => {
+            setError('خطا در پرداخت: ' + error.message);
+            setLoading(false);
+          }
         }
-      } else {
-        setError('خطا در تایید اولیه پرداخت.');
-      }
+      );
     } catch (err) {
       console.error('Payment Error:', err);
-      setError('خطا در اتصال به سرور. مطمئن شوید بک‌اِند روشن است.');
-    } finally {
+      setError('خطا در اجرای پرداخت. لطفاً دوباره تلاش کنید.');
       setLoading(false);
     }
   };
@@ -122,14 +134,14 @@ const Payment = ({ onPaymentSuccess }) => {
   return (
     <div style={styles.card}>
       <h2 style={styles.title}>🛒 خرید اشتراک PiDao</h2>
-      
+
       {error && <div style={styles.error}>{error}</div>}
 
       <form onSubmit={handlePayment}>
         <div style={styles.inputGroup}>
           <label style={styles.label}>مبلغ مورد نظر (به واحد PI):</label>
-          <input 
-            type="number" 
+          <input
+            type="number"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             style={styles.input}
@@ -138,12 +150,13 @@ const Payment = ({ onPaymentSuccess }) => {
           />
         </div>
 
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           disabled={loading}
           style={{
             ...styles.button,
-            backgroundColor: loading ? '#ccc' : '#4A90E2'
+            backgroundColor: loading ? '#ccc' : '#4A90E2',
+            cursor: loading ? 'not-allowed' : 'pointer'
           }}
         >
           {loading ? 'در حال پردازش...' : 'پرداخت و تایید'}
