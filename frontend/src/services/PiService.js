@@ -1,53 +1,55 @@
 // frontend/src/services/PiService.js
-import axiosClient from "../api/axiosClient";
+import axiosClient from '../lib/axiosClient';
 
+/**
+ * سرویس پرداخت Pi
+ * تمام ارتباطات از طریق backend انجام می‌شود.
+ * هیچ کلید حساسی در این فایل وجود ندارد.
+ */
 const PiService = {
-  // ایجاد درخواست پرداخت در backend
-  createPayment: async (paymentData) => {
-    try {
-      const response = await axiosClient.post("/api/payment/create", paymentData);
-      return response.data;
-    } catch (error) {
-      console.error("PiService.createPayment error:", error);
-      throw error;
-    }
+  /**
+   * ایجاد پرداخت
+   * payload مثال:
+   * { amount: 5, memo: 'PiDao payment', metadata: {...} }
+   */
+  createPayment: async (payload) => {
+    const response = await axiosClient.post('/payment/create', payload);
+    return response.data;
   },
 
-  // تایید پرداخت در backend
+  /**
+   * تایید پرداخت توسط backend
+   */
   approvePaymentOnBackend: async (paymentId) => {
-    try {
-      const response = await axiosClient.post("/api/payment/approve", {
-        paymentId,
-      });
-      return response.data;
-    } catch (error) {
-      console.error("PiService.approvePaymentOnBackend error:", error);
-      throw error;
-    }
+    const response = await axiosClient.post('/payment/approve', {
+      paymentId,
+    });
+    return response.data;
   },
 
-  // تکمیل پرداخت در backend
-  completePaymentOnBackend: async (paymentId) => {
-    try {
-      const response = await axiosClient.post("/api/payment/complete", {
-        paymentId,
-      });
-      return response.data;
-    } catch (error) {
-      console.error("PiService.completePaymentOnBackend error:", error);
-      throw error;
-    }
+  /**
+   * تکمیل پرداخت توسط backend
+   */
+  completePaymentOnBackend: async (payload) => {
+    const response = await axiosClient.post('/payment/complete', payload);
+    return response.data;
   },
 
-  // گرفتن وضعیت پرداخت
+  /**
+   * گرفتن وضعیت پرداخت
+   */
   getPaymentStatus: async (paymentId) => {
-    try {
-      const response = await axiosClient.get(`/api/payment/status/${paymentId}`);
-      return response.data;
-    } catch (error) {
-      console.error("PiService.getPaymentStatus error:", error);
-      throw error;
-    }
+    const response = await axiosClient.get(`/payment/status/${paymentId}`);
+    return response.data;
+  },
+
+  /**
+   * گرفتن تراکنش‌های ادمین
+   * این route باید در backend با JWT محافظت شود
+   */
+  getAdminTransactions: async () => {
+    const response = await axiosClient.get('/admin/transactions');
+    return response.data;
   },
 };
 
