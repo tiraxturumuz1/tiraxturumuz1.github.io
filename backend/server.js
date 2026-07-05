@@ -1,138 +1,184 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const axios = require('axios'); // برای ارتباط با شبکه Pi
-require('dotenv').config();
+// backend/server.js
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import jwt from "jsonwebtoken";
+import axios from "axios";
 
-const Transaction = require('../models/Transaction');
+dotenv.config();
 
 const app = express();
-
-// --- MIDDLEWARES ---
-
-// تنظیم CORS برای جلوگیری از درخواست‌های غیرمجاز از دامنه‌های دیگر
-app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173'
-}));
-
+app.use(cors());
 app.use(express.json());
 
-/**
- * میان‌افزار محافظت از مسیرهای ادمین
- * فقط کسانی که Admin Key صحیح را در هدر داشته باشند دسترسی دارند
- */
-const protectAdmin = (req, res, next) => {
-    const adminKey = req.headers['x-admin-key'];
-    if (adminKey && adminKey === process.env.ADMIN_SECRET_KEY) {
-        next();
-    } else {
-        res.status(403).json({ error: 'Access denied. Admin privileges required.' });
-    }
+const PORT = process.env.PORT || 5000;
+const JWT_SECRET = process.env.JWT_SECRET;
+
+// ---------------------------------
+// Middleware: JWT Auth
+// ---------------------------------
+const authenticateJWT = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "Unauthorized: missing token" });
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(403).json({ message: "Forbidden: invalid token" });
+  }
 };
 
-// --- DATABASE CONNECTION ---
-
-mongoose.connect(process.env.DATABASE_URL)
-    .then(() => console.log('✅ Connected to MongoDB (Secure Mode)'))
-    .catch(err => console.error('❌ MongoDB Connection Error:', err));
-
-// --- ROUTES: PAYMENT (Client-Facing) ---
-
-/**
- * مرحله ۱: تایید اولیه پرداخت توسط شبکه Pi
- * کلاینت این را صدا می‌زند، بک‌انند با شبکه Pi صحبت می‌کند
- */
-app.post('/api/payment/approve', async (req, res) => {
-    try {
-        const { piTransactionId, amount, walletAddress } = req.body;
-
-        if (!piTransactionId || !amount) {
-            return res.status(400).json({ error: 'Missing transaction details' });
-        }
-
-        // --- REAL PI NETWORK INTEGRATION ---
-        // در اینجا ما به جای Mock، درخواست واقعی به API شبکه Pi می‌فرستیم
-        // نکته: VITE_PI_API_KEY دیگر در فرانت نیست، اینجا در بک‌انند مخفی است.
-        
-        /* 
-        const piResponse = await axios.post('https://api.minepi.com/v2/transactions/verify', {
-            transactionId: piTransactionId
-        }, {
-            headers: { 'Authorization': `Bearer ${process.env.PI_API_KEY}` }
-        });
-        */
-
-        // برای ساختار فعلی شما، من منطق را آماده کرده‌ام. 
-        // فعلاً یک پاسخ موفق شبیه‌سازی شده اما با ساختار امن برمی‌گردد.
-        res.json({
-            success: true,
-            message: 'Payment verification initiated',
-            piTransactionId: piTransactionId
-        });
-
-    } catch (error) {
-        console.error('Payment Approval Error:', error.message);
-        res.status(500).json({ error: 'Internal server error during Pi verification' });
-    }
+// ---------------------------------
+// Pi Network API client on backend
+// ---------------------------------
+const piApi = axios.create({
+  baseURL: process.env.PI_API_BASE_URL || "https://api.minepi.com",
+  headers: {
+    Authorization: `Key ${process.env.PI_API_KEY}`,
+    "Content-Type": "application/json",
+  },
 });
 
-/**
- * مرحله ۲: نهایی کردن تراکنش در دیتابیس خودمان
- */
-app.post('/api/payment/complete', async (req, res) => {
-    try {
-        const { piTransactionId, paymentDetails } = req.body;
+// ---------------------------------
+// Payment create
+// ---------------------------------
+app.post("/api/payment/create", async (req, res) => {
+  try {
+    const { amount, memo } = req.body;
 
-        if (!piTransactionId || !paymentDetails?.amount) {
-            return res.status(400).json({ error: 'Invalid transaction data' });
-        }
-
-        // ۱. جلوگیری از Double Spending (تراکنش تکراری)
-        const existingTx = await Transaction.findOne({ piTransactionId });
-        if (existingTx) {
-            return res.status(400).json({ error: 'Transaction already processed' });
-        }
-
-        // ۲. ثبت تراکنش با وضعیت 'pending' در ابتدا
-        const newTransaction = new Transaction({
-            piTransactionId,
-            amount: paymentDetails.amount,
-            walletAddress: paymentDetails.walletAddress,
-            status: 'completed', // در سیستم واقعی، بعد از تایید Pi، این را تغییر می‌دهیم
-            timestamp: new Date()
-        });
-
-        await newTransaction.save();
-
-        res.status(201).json({
-            success: true,
-            transactionId: newTransaction._id,
-            message: 'Transaction recorded successfully'
-        });
-
-    } catch (error) {
-        console.error('Completion Error:', error.message);
-        res.status(500).json({ error: 'Failed to record transaction' });
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ message: "Invalid amount" });
     }
+
+    // این endpoint را با endpoint واقعی Pi API هماهنگ کن
+    const response = await piApi.post("/payments", {
+      amount,
+      memo,
+    });
+
+    return res.status(200).json({
+      message: "Payment created",
+      paymentId: response.data?.paymentId || response.data?.id,
+      raw: response.data,
+    });
+  } catch (error) {
+    console.error("create payment error:", error?.response?.data || error.message);
+    return res.status(500).json({
+      message: "Failed to create payment",
+      error: error?.response?.data || error.message,
+    });
+  }
 });
 
-// --- ROUTES: ADMIN (Protected) ---
+// ---------------------------------
+// Payment approve
+// ---------------------------------
+app.post("/api/payment/approve", async (req, res) => {
+  try {
+    const { paymentId } = req.body;
 
-/**
- * دریافت لیست تراکنش‌ها - فقط برای ادمین
- */
-app.get('/api/admin/transactions', protectAdmin, async (req, res) => {
-    try {
-        const transactions = await Transaction.find().sort({ timestamp: -1 });
-        res.json(transactions);
-    } catch (error) {
-        res.status(500).json({ error: 'Error fetching transactions' });
+    if (!paymentId) {
+      return res.status(400).json({ message: "paymentId is required" });
     }
+
+    // این endpoint را مطابق Pi Network API واقعی خودت تنظیم کن
+    const response = await piApi.post(`/payments/${paymentId}/approve`);
+
+    return res.status(200).json({
+      message: "Payment approved successfully",
+      data: response.data,
+    });
+  } catch (error) {
+    console.error("approve payment error:", error?.response?.data || error.message);
+    return res.status(500).json({
+      message: "Failed to approve payment",
+      error: error?.response?.data || error.message,
+    });
+  }
 });
 
-// --- SERVER START ---
+// ---------------------------------
+// Payment complete
+// ---------------------------------
+app.post("/api/payment/complete", async (req, res) => {
+  try {
+    const { paymentId } = req.body;
 
-const PORT = process.env.PORT || 5000;
+    if (!paymentId) {
+      return res.status(400).json({ message: "paymentId is required" });
+    }
+
+    const response = await piApi.post(`/payments/${paymentId}/complete`);
+
+    return res.status(200).json({
+      message: "Payment completed successfully",
+      data: response.data,
+    });
+  } catch (error) {
+    console.error("complete payment error:", error?.response?.data || error.message);
+    return res.status(500).json({
+      message: "Failed to complete payment",
+      error: error?.response?.data || error.message,
+    });
+  }
+});
+
+// ---------------------------------
+// Payment status
+// ---------------------------------
+app.get("/api/payment/status/:paymentId", async (req, res) => {
+  try {
+    const { paymentId } = req.params;
+
+    const response = await piApi.get(`/payments/${paymentId}`);
+
+    return res.status(200).json({
+      status: response.data?.status,
+      data: response.data,
+    });
+  } catch (error) {
+    console.error("payment status error:", error?.response?.data || error.message);
+    return res.status(500).json({
+      message: "Failed to get payment status",
+      error: error?.response?.data || error.message,
+    });
+  }
+});
+
+// ---------------------------------
+// Protected admin transactions
+// ---------------------------------
+app.get("/api/admin/transactions", authenticateJWT, async (req, res) => {
+  try {
+    // اینجا منبع واقعی تراکنش‌ها را از DB یا سرویس داخلی بخوان
+    const transactions = [
+      {
+        id: "tx_1",
+        amount: 10,
+        status: "completed",
+      },
+    ];
+
+    return res.status(200).json({
+      message: "Transactions fetched successfully",
+      transactions,
+      user: req.user,
+    });
+  } catch (error) {
+    console.error("transactions error:", error.message);
+    return res.status(500).json({
+      message: "Failed to fetch transactions",
+    });
+  }
+});
+
 app.listen(PORT, () => {
-    console.log(`🚀 Secure Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
