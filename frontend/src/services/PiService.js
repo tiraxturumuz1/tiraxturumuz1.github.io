@@ -1,51 +1,52 @@
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-
-const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+// frontend/src/services/PiService.js
+import axiosClient from "../api/axiosClient";
 
 const PiService = {
-  async approvePayment(paymentData) {
+  // ایجاد درخواست پرداخت در backend
+  createPayment: async (paymentData) => {
     try {
-      const response = await apiClient.post('/payment/approve', paymentData);
+      const response = await axiosClient.post("/api/payment/create", paymentData);
       return response.data;
     } catch (error) {
-      console.error('Error in approvePayment:', error.response?.data || error.message);
-      throw error.response?.data || { error: 'Failed to approve payment' };
+      console.error("PiService.createPayment error:", error);
+      throw error;
     }
   },
 
-  async completeTransaction(piTransactionId, paymentDetails) {
+  // تایید پرداخت در backend
+  approvePaymentOnBackend: async (paymentId) => {
     try {
-      const response = await apiClient.post('/payment/complete', {
-        piTransactionId,
-        paymentDetails,
+      const response = await axiosClient.post("/api/payment/approve", {
+        paymentId,
       });
-
       return response.data;
     } catch (error) {
-      console.error('Error in completeTransaction:', error.response?.data || error.message);
-      throw error.response?.data || { error: 'Failed to complete transaction' };
+      console.error("PiService.approvePaymentOnBackend error:", error);
+      throw error;
     }
   },
 
-  async getAdminTransactions(adminKey) {
+  // تکمیل پرداخت در backend
+  completePaymentOnBackend: async (paymentId) => {
     try {
-      const response = await apiClient.get('/admin/transactions', {
-        headers: {
-          'x-admin-key': adminKey,
-        },
+      const response = await axiosClient.post("/api/payment/complete", {
+        paymentId,
       });
-
       return response.data;
     } catch (error) {
-      console.error('Error in getAdminTransactions:', error.response?.data || error.message);
-      throw error.response?.data || { error: 'Failed to fetch transactions' };
+      console.error("PiService.completePaymentOnBackend error:", error);
+      throw error;
+    }
+  },
+
+  // گرفتن وضعیت پرداخت
+  getPaymentStatus: async (paymentId) => {
+    try {
+      const response = await axiosClient.get(`/api/payment/status/${paymentId}`);
+      return response.data;
+    } catch (error) {
+      console.error("PiService.getPaymentStatus error:", error);
+      throw error;
     }
   },
 };
