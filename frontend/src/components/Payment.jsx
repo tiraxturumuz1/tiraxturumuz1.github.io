@@ -24,11 +24,7 @@ const Payment = () => {
       setPaymentId(data.paymentId || data.id || '');
       setStatus(data.message || 'Payment created successfully');
     } catch (err) {
-      setError(
-        err?.response?.data?.message ||
-          err.message ||
-          'Failed to create payment'
-      );
+      setError(err?.response?.data?.message || err.message || 'Failed to create payment');
     } finally {
       setLoading(false);
     }
@@ -48,11 +44,7 @@ const Payment = () => {
       const data = await PiService.approvePaymentOnBackend(paymentId);
       setStatus(data.message || 'Payment approved successfully');
     } catch (err) {
-      setError(
-        err?.response?.data?.message ||
-          err.message ||
-          'Failed to approve payment'
-      );
+      setError(err?.response?.data?.message || err.message || 'Failed to approve payment');
     } finally {
       setLoading(false);
     }
@@ -71,7 +63,7 @@ const Payment = () => {
     try {
       const data = await PiService.completePaymentOnBackend({
         paymentId,
-        txid: data?.txid || paymentId,
+        txid: paymentId,
         paymentDetails: {
           memo,
           amount: Number(amount),
@@ -80,11 +72,7 @@ const Payment = () => {
 
       setStatus(data.message || 'Payment completed successfully');
     } catch (err) {
-      setError(
-        err?.response?.data?.message ||
-          err.message ||
-          'Failed to complete payment'
-      );
+      setError(err?.response?.data?.message || err.message || 'Failed to complete payment');
     } finally {
       setLoading(false);
     }
@@ -104,11 +92,7 @@ const Payment = () => {
       const data = await PiService.getPaymentStatus(paymentId);
       setStatus(`Status: ${data.status || 'unknown'}`);
     } catch (err) {
-      setError(
-        err?.response?.data?.message ||
-          err.message ||
-          'Failed to fetch payment status'
-      );
+      setError(err?.response?.data?.message || err.message || 'Failed to fetch payment status');
     } finally {
       setLoading(false);
     }
@@ -125,7 +109,6 @@ const Payment = () => {
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           style={{ width: '100%', padding: 8, marginTop: 4 }}
-          placeholder="Enter amount"
         />
       </div>
 
@@ -136,7 +119,6 @@ const Payment = () => {
           value={memo}
           onChange={(e) => setMemo(e.target.value)}
           style={{ width: '100%', padding: 8, marginTop: 4 }}
-          placeholder="Enter memo"
         />
       </div>
 
@@ -147,7 +129,6 @@ const Payment = () => {
           value={paymentId}
           onChange={(e) => setPaymentId(e.target.value)}
           style={{ width: '100%', padding: 8, marginTop: 4 }}
-          placeholder="Payment ID"
         />
       </div>
 
