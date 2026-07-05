@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import axiosClient from '../lib/axiosClient';
-import { User } from '../types/user';
+import { useAuth } from '../context/AuthContext'; // استفاده از Context
 
 // صفحات و کامپوننت‌ها
 import Home from '../pages/Home';
@@ -18,42 +17,36 @@ const LoadingScreen = () => (
 );
 
 const AppRouter = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // دریافت تمام وضعیت‌ها از AuthContext (تنها منبع حقیقت)
+  const { user, loading, isLoggingIn } = useAuth();
 
-  useEffect(() => {
-    const checkUserStatus = async () => {
-      const timeoutId = setTimeout(() => setIsLoading(false), 6000);
-      try {
-        const response = await axiosClient.get("/user/me");
-        if (response.data) setUser(response.data);
-      } catch (error) {
-        console.error("Auth check failed:", error);
-      } finally {
-        setIsLoading(false);
-        clearTimeout(timeoutId);
-      }
-    };
-    checkUserStatus();
-  }, []);
-
-  if (isLoading) return <LoadingScreen />;
+  // اگر در حال چک کردن اولیه هستیم یا کاربر در حال لاگین است
+  // نمایش صفحه Loading برای جلوگیری از پرش (flicker) و نمایش صفحات اشتباه
+  if (loading || isLoggingIn) {
+    return <LoadingScreen />;
+  }
 
   return (
     <Router>
       <Routes>
         {/* مسیرهای عمومی */}
         <Route path="/" element={<Home />} />
-        <Route path="/login" element={user ? <Navigate to="/shop" /> : <SignIn />} />
+        
+        {/* اگر کاربر لاگین بود، به جای صفحه لاگین، به shop برود */}
+        <Route 
+          path="/login" 
+          element={user ? <Navigate to="/shop" replace /> : <SignIn />} 
+        />
 
-        {/* مسیرهای محافظت شده (فقط برای کاربران لاگین شده) */}
+        {/* مسیرهای محافظت شده */}
         <Route 
           path="/tasks" 
-          element={user ? <EngagementTasksPage /> : <Navigate to="/login" />} 
+          element={user ? <EngagementTasksPage /> : <Navigate to="/login" replace />} 
         />
+        
         <Route 
           path="/shop" 
-          element={user ? <Shop /> : <Navigate to="/login" />} 
+          element={user ? <Shop /> : <Navigate to="/login" replace />} 
         />
 
         {/* مدیریت 404 */}
