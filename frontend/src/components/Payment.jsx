@@ -1,31 +1,33 @@
-import React, { useState } from "react";
-import PiService from "../services/PiService";
+// frontend/src/components/Payment.jsx
+import React, { useState } from 'react';
+import PiService from '../services/PiService';
 
 const Payment = () => {
-  const [amount, setAmount] = useState("");
-  const [paymentId, setPaymentId] = useState("");
-  const [status, setStatus] = useState("");
+  const [amount, setAmount] = useState('');
+  const [memo, setMemo] = useState('PiDao payment');
+  const [paymentId, setPaymentId] = useState('');
+  const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
   const handleCreatePayment = async () => {
     setLoading(true);
-    setError("");
-    setStatus("");
+    setError('');
+    setStatus('');
 
     try {
       const data = await PiService.createPayment({
         amount: Number(amount),
-        memo: "PiDao payment",
+        memo,
       });
 
-      setPaymentId(data.paymentId || data.id || "");
-      setStatus("Payment created successfully");
+      setPaymentId(data.paymentId || data.id || '');
+      setStatus(data.message || 'Payment created successfully');
     } catch (err) {
       setError(
         err?.response?.data?.message ||
           err.message ||
-          "Failed to create payment"
+          'Failed to create payment'
       );
     } finally {
       setLoading(false);
@@ -34,22 +36,22 @@ const Payment = () => {
 
   const handleApprovePayment = async () => {
     if (!paymentId) {
-      setError("Payment ID is required");
+      setError('Payment ID is required');
       return;
     }
 
     setLoading(true);
-    setError("");
-    setStatus("");
+    setError('');
+    setStatus('');
 
     try {
       const data = await PiService.approvePaymentOnBackend(paymentId);
-      setStatus(data?.message || "Payment approved successfully");
+      setStatus(data.message || 'Payment approved successfully');
     } catch (err) {
       setError(
         err?.response?.data?.message ||
           err.message ||
-          "Failed to approve payment"
+          'Failed to approve payment'
       );
     } finally {
       setLoading(false);
@@ -58,22 +60,30 @@ const Payment = () => {
 
   const handleCompletePayment = async () => {
     if (!paymentId) {
-      setError("Payment ID is required");
+      setError('Payment ID is required');
       return;
     }
 
     setLoading(true);
-    setError("");
-    setStatus("");
+    setError('');
+    setStatus('');
 
     try {
-      const data = await PiService.completePaymentOnBackend(paymentId);
-      setStatus(data?.message || "Payment completed successfully");
+      const data = await PiService.completePaymentOnBackend({
+        paymentId,
+        txid: data?.txid || paymentId,
+        paymentDetails: {
+          memo,
+          amount: Number(amount),
+        },
+      });
+
+      setStatus(data.message || 'Payment completed successfully');
     } catch (err) {
       setError(
         err?.response?.data?.message ||
           err.message ||
-          "Failed to complete payment"
+          'Failed to complete payment'
       );
     } finally {
       setLoading(false);
@@ -82,22 +92,22 @@ const Payment = () => {
 
   const handleCheckStatus = async () => {
     if (!paymentId) {
-      setError("Payment ID is required");
+      setError('Payment ID is required');
       return;
     }
 
     setLoading(true);
-    setError("");
-    setStatus("");
+    setError('');
+    setStatus('');
 
     try {
       const data = await PiService.getPaymentStatus(paymentId);
-      setStatus(`Status: ${data?.status || "unknown"}`);
+      setStatus(`Status: ${data.status || 'unknown'}`);
     } catch (err) {
       setError(
         err?.response?.data?.message ||
           err.message ||
-          "Failed to get payment status"
+          'Failed to fetch payment status'
       );
     } finally {
       setLoading(false);
@@ -105,8 +115,8 @@ const Payment = () => {
   };
 
   return (
-    <div style={{ maxWidth: 500, margin: "0 auto", padding: 20 }}>
-      <h2>Payment</h2>
+    <div style={{ maxWidth: 560, margin: '0 auto', padding: 20 }}>
+      <h2>Pi Payment</h2>
 
       <div style={{ marginBottom: 12 }}>
         <label>Amount</label>
@@ -114,7 +124,19 @@ const Payment = () => {
           type="number"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          style={{ width: "100%", padding: 8 }}
+          style={{ width: '100%', padding: 8, marginTop: 4 }}
+          placeholder="Enter amount"
+        />
+      </div>
+
+      <div style={{ marginBottom: 12 }}>
+        <label>Memo</label>
+        <input
+          type="text"
+          value={memo}
+          onChange={(e) => setMemo(e.target.value)}
+          style={{ width: '100%', padding: 8, marginTop: 4 }}
+          placeholder="Enter memo"
         />
       </div>
 
@@ -124,11 +146,12 @@ const Payment = () => {
           type="text"
           value={paymentId}
           onChange={(e) => setPaymentId(e.target.value)}
-          style={{ width: "100%", padding: 8 }}
+          style={{ width: '100%', padding: 8, marginTop: 4 }}
+          placeholder="Payment ID"
         />
       </div>
 
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <button onClick={handleCreatePayment} disabled={loading}>
           Create
         </button>
@@ -144,8 +167,8 @@ const Payment = () => {
       </div>
 
       {loading && <p>Loading...</p>}
-      {status && <p style={{ color: "green" }}>{status}</p>}
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {status && <p style={{ color: 'green' }}>{status}</p>}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
     </div>
   );
 };
