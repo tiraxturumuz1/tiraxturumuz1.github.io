@@ -1,4 +1,3 @@
-// frontend/src/components/Payment.jsx
 import React, { useState } from 'react';
 import PiService from '../services/PiService';
 
@@ -11,143 +10,56 @@ const Payment = () => {
   const [error, setError] = useState('');
 
   const handleCreatePayment = async () => {
-    setLoading(true);
-    setError('');
-    setStatus('');
-
+    setLoading(true); setError(''); setStatus('');
     try {
-      const data = await PiService.createPayment({
-        amount: Number(amount),
-        memo,
+      const data = await PiService.createPayment({ amount: Number(amount), memo });
+      setPaymentId(data.paymentId || data.id);
+      setStatus('Payment initiated. Please check Pi Browser.');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to create payment');
+    } finally { setLoading(false); }
+  };
+
+  const handleApprove = async () => {
+    if (!paymentId) return setError('No Payment ID');
+    setLoading(true); setError('');
+    try {
+      const data = await PiService.approvePayment(paymentId);
+      setStatus(data.message);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Approval failed');
+    } finally { setLoading(false); }
+  };
+
+  const handleComplete = async () => {
+    if (!paymentId) return setError('No Payment ID');
+    setLoading(true); setError('');
+    try {
+      const data = await PiService.completePayment({ 
+        paymentId, 
+        txid: paymentId, // در دنیای واقعی باید txid واقعی از SDK بگیرید
+        paymentDetails: { amount: Number(amount), memo } 
       });
-
-      setPaymentId(data.paymentId || data.id || '');
-      setStatus(data.message || 'Payment created successfully');
+      setStatus(data.message);
     } catch (err) {
-      setError(err?.response?.data?.message || err.message || 'Failed to create payment');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleApprovePayment = async () => {
-    if (!paymentId) {
-      setError('Payment ID is required');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-    setStatus('');
-
-    try {
-      const data = await PiService.approvePaymentOnBackend(paymentId);
-      setStatus(data.message || 'Payment approved successfully');
-    } catch (err) {
-      setError(err?.response?.data?.message || err.message || 'Failed to approve payment');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCompletePayment = async () => {
-    if (!paymentId) {
-      setError('Payment ID is required');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-    setStatus('');
-
-    try {
-      const data = await PiService.completePaymentOnBackend({
-        paymentId,
-        txid: paymentId,
-        paymentDetails: {
-          memo,
-          amount: Number(amount),
-        },
-      });
-
-      setStatus(data.message || 'Payment completed successfully');
-    } catch (err) {
-      setError(err?.response?.data?.message || err.message || 'Failed to complete payment');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCheckStatus = async () => {
-    if (!paymentId) {
-      setError('Payment ID is required');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-    setStatus('');
-
-    try {
-      const data = await PiService.getPaymentStatus(paymentId);
-      setStatus(`Status: ${data.status || 'unknown'}`);
-    } catch (err) {
-      setError(err?.response?.data?.message || err.message || 'Failed to fetch payment status');
-    } finally {
-      setLoading(false);
-    }
+      setError(err.response?.data?.message || 'Completion failed');
+    } finally { setLoading(false); }
   };
 
   return (
-    <div style={{ maxWidth: 560, margin: '0 auto', padding: 20 }}>
-      <h2>Pi Payment</h2>
-
-      <div style={{ marginBottom: 12 }}>
-        <label>Amount</label>
-        <input
-          type="number"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          style={{ width: '100%', padding: 8, marginTop: 4 }}
-        />
+    <div style={{ padding: '20px', maxWidth: '400px', margin: 'auto' }}>
+      <h3>Pi Payment Gateway</h3>
+      <input type="number" placeholder="Amount" value={amount} onChange={e => setAmount(e.target.value)} style={{width: '100%', marginBottom: '10px'}}/>
+      <input type="text" placeholder="Memo" value={memo} onChange={e => setMemo(e.target.value)} style={{width: '100%', marginBottom: '10px'}}/>
+      <input type="text" placeholder="Payment ID (for testing)" value={paymentId} onChange={e => setPaymentId(e.target.value)} style={{width: '100%', marginBottom: '10px'}}/>
+      
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+        <button onClick={handleCreatePayment} disabled={loading}>1. Create</button>
+        <button onClick={handleApprove} disabled={loading}>2. Approve</button>
+        <button onClick={handleComplete} disabled={loading} style={{gridColumn: 'span 2'}}>3. Complete</button>
       </div>
 
-      <div style={{ marginBottom: 12 }}>
-        <label>Memo</label>
-        <input
-          type="text"
-          value={memo}
-          onChange={(e) => setMemo(e.target.value)}
-          style={{ width: '100%', padding: 8, marginTop: 4 }}
-        />
-      </div>
-
-      <div style={{ marginBottom: 12 }}>
-        <label>Payment ID</label>
-        <input
-          type="text"
-          value={paymentId}
-          onChange={(e) => setPaymentId(e.target.value)}
-          style={{ width: '100%', padding: 8, marginTop: 4 }}
-        />
-      </div>
-
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <button onClick={handleCreatePayment} disabled={loading}>
-          Create
-        </button>
-        <button onClick={handleApprovePayment} disabled={loading}>
-          Approve
-        </button>
-        <button onClick={handleCompletePayment} disabled={loading}>
-          Complete
-        </button>
-        <button onClick={handleCheckStatus} disabled={loading}>
-          Status
-        </button>
-      </div>
-
-      {loading && <p>Loading...</p>}
+      {loading && <p>Processing...</p>}
       {status && <p style={{ color: 'green' }}>{status}</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
     </div>
