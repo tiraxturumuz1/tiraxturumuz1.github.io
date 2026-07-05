@@ -3,77 +3,49 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
 
-// ۱. ثبت‌نام کاربر جدید
-router.post('/register', async (req, res) => {
-  try {
-    const { username, email, password } = req.body;
+// مسیر احراز هویت با Pi Network
+router.post('/pi-login', async (req, res) => {
+  const { pi_user_id, username } = req.body;
 
-    // چک کردن اینکه کاربر قبلاً ثبت نام نکرده باشد
-    let user = await User.findOne({ email });
-    if (user) return res.status(400).json({ success: false, message: 'کاربر با این ایمیل وجود دارد' });
-
-    user = await User.findOne({ username });
-    if (user) return res.status(400).json({ success: false, message: 'این نام کاربری رزرو شده است' });
-
-    // هش کردن پسورد (امنیت بالا)
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // ذخیره کاربر
-    user = new User({
-      username,
-      email,
-      password: hashedPassword
-    });
-
-    await user.save();
-
-    // تولید توکن برای لاگین خودکار بعد از ثبت‌نام
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: process.env.TOKEN_EXPIRATION || '7d'
-    });
-
-    res.status(201).json({
-      success: true,
-      token,
-      user: { id: user._id, username: user.username, email: user.email }
-    });
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: 'خطای سرور در هنگام ثبت‌نام' });
+  if (!pi_user_id) {
+    return res.status(400).json({ success: false, message: 'Pi User ID الزامی است' });
   }
-});
 
-// ۲. ورود کاربر
-router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    // ۱. بررسی اینکه آیا کاربر قبلاً وجود دارد یا خیر
+    let user = await User.findOne({ piUserId: pi_user_id });
 
-    // پیدا کردن کاربر
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ success: false, message: 'ایمیل یا پسورد اشتباه است' });
+    if (!user) {
+      // ۲. اگر وجود نداشت، کاربر جدید بساز
+      user = new User({
+        piUserId: pi_user_id,
+        username: username || 'PiUser', // استفاده از نام کاربری پیش‌فرض در صورت نبودن
+        role: 'user'
+      });
+      await user.save();
+    }
 
-    // چک کردن پسورد
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ success: false, message: 'ایمیل یا پسورد اشتباه است' });
+    // ۳. ایجاد توکن JWT
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.TOKEN_EXPIRATION || '7d' }
+    );
 
-    // تولید توکن
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: process.env.TOKEN_EXPIRATION || '7d'
-    });
-
+    // ۴. پاسخ موفقیت‌آمیز
     res.json({
       success: true,
       token,
-      user: { id: user._id, username: user.username, email: user.email }
+      user: {
+        id: user._id,
+        username: user.username,
+        role: user.role
+      }
     });
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: 'خطای سرور در هنگام ورود' });
+  } catch (error) {
+    console.error('Pi Login Error:', error);
+    res.status(500).json({ success: false, message: 'خطا در فرآیند احراز هویت شبکه Pi' });
   }
 });
 
