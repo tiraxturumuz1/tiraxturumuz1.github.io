@@ -1,45 +1,59 @@
-// frontend/src/context/AuthContext.jsx
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import axiosClient from '../lib/axiosClient';
 
-const AuthContext = createContext(null);
+const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // برای بارگذاری اولیه اپلیکیشن
+  const [isLoggingIn, setIsLoggingIn] = useState(false); // برای وضعیت حین عملیات لاگین
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
-    if (storedUser && token) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
+    const initAuth = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const savedUser = localStorage.getItem('user');
+        
+        if (token && savedUser) {
+          // تایید توکن با سرور
+          const response = await axiosClient.get("/user/me");
+          if (response.data) {
+            setUser(response.data);
+          } else {
+            // اگر توکن بود ولی سرور کاربر را نشناخت، پاک کن
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+          }
+        }
+      } catch (error) {
+        console.error("Initial auth check failed:", error);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      } finally {
+        setLoading(false);
+      }
+    };
+    initAuth();
   }, []);
 
-  /**
-   * تابع جدید برای لاگین از طریق Pi SDK
-   * @param {Object} piUser - اطلاعاتی که از Pi SDK دریافت شده (username, user_id, etc.)
-   */
-  const loginWithPi = async (piUser) => {
+  const loginWithPi = async () => {
+    setIsLoggingIn(true); // شروع عملیات
     try {
-      // ارسال اطلاعات کاربر به بک‌اِند برای تایید یا ایجاد کاربر جدید
-      const response = await axiosClient.post('/auth/pi-login', {
-        pi_user_id: piUser.uid,
-        username: piUser.username,
-      });
+      const response = await axiosClient.post('/auth/pi-login');
+      const { user: userData, token } = response.data;
 
-      const { token, user: userData } = response.data;
-
+      // ذخیره در localStorage
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(userData));
+
+      // آپدیت State اصلی
       setUser(userData);
-      return { success: true };
+      return response.data;
     } catch (error) {
-      return { 
-        success: false, 
-        message: error.response?.data?.message || 'خطا در اتصال به شبکه Pi' 
-      };
+      console.error("Pi Login Error:", error);
+      throw error;
+    } finally {
+      setIsLoggingIn(false); // پایان عملیات (چه موفق چه خطا)
     }
   };
 
@@ -50,8 +64,15 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loginWithPi, logout, loading }}>
-      {!loading && children}
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      isLoggingIn, 
+      loginWithPi, 
+      logout, 
+      isAuthenticated: !!user 
+    }}>
+      {children}
     </AuthContext.Provider>
   );
 };
