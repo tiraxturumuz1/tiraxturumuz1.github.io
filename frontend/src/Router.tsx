@@ -1,6 +1,6 @@
 import React from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from './context/AuthContext'; // اصلاح شد: از ./ استفاده شد چون Router در پوشه src است
+import { useAuth } from './hooks/useAuth'; // اصلاح شد: استفاده از Hook موجود در پروژه
 
 // صفحات و کامپوننت‌ها
 import Home from './pages/Home';
@@ -25,17 +25,17 @@ const LoadingScreen = () => (
       width: '40px', 
       height: '40px', 
       animation: 'spin 2s linear infinite' 
-    }}></div>
+    }}></div >
     <p style={{ marginTop: '20px', color: '#555' }}>Authenticating...</p>
     <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
   </div>
 );
 
 const AppRouter = () => {
-  // دریافت تمام وضعیت‌ها از AuthContext
+  // دریافت وضعیت‌ها از Hook موجود در پروژه
   const { user, loading, isLoggingIn } = useAuth();
 
-  // اگر در حال چک کردن اولیه هستیم یا کاربر در حال لاگین است
+  // نمایش صفحه Loading
   if (loading || isLoggingIn) {
     return <LoadingScreen />;
   }
@@ -46,7 +46,7 @@ const AppRouter = () => {
         {/* مسیرهای عمومی */}
         <Route path="/" element={<Home />} />
         
-        {/* اگر کاربر لاگین بود، به جای صفحه لاگین، به shop برود */}
+        {/* مسیر لاگین */}
         <Route 
           path="/login" 
           element={user ? <Navigate to="/shop" replace /> : <SignIn />} 
