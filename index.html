@@ -2,18 +2,15 @@
 <html lang="fa" dir="rtl">
   <head>
     <meta charset="UTF-8" />
-    <!-- تگ viewport برای واکنش‌گرا بودن در موبایل -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="PiDao - مدیریت تراکنش‌های شبکه Pi" />
     <title>PiDao | پنل مدیریت تراکنش</title>
     
-    <!-- فونت‌های پیشنهادی برای ظاهر بهتر فارسی (اختیاری) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100;400;700&display=swap" rel="stylesheet">
 
     <style>
-      /* استایل اولیه برای جلوگیری از پرش صفحه قبل از لود شدن React */
       body {
         margin: 0;
         font-family: 'Vazirmatn', Tahoma, sans-serif;
@@ -22,10 +19,9 @@
     </style>
   </head>
   <body>
-    <!-- این عنصر مهم‌ترین بخش است؛ React تمام کدهای شما را داخل این div تزریق می‌کند -->
     <div id="root"></div>
 
-    <!-- در پروژه‌های Vite، فایل اصلی جاوااسکریپت از اینجا لود می‌شود -->
-    <script type="module" src="/src/main.jsx"></script>
+    <!-- اصلاح شد: پسوند از .jsx به .tsx تغییر یافت -->
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
