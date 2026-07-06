@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+# این بخش بسیار حیاتی است تا اکشن اجازه ساخت شاخه را داشته باشد
+permissions:
+  contents: write
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
