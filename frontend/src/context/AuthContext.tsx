@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import axios from 'axios';
 
 // تعریف ساختار اطلاعات کاربر
-interface User {
+export interface User {
   id: string;
   username: string;
   role: 'user' | 'admin';
@@ -38,7 +38,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (token) {
         try {
           // یک درخواست به بک‌اِند برای تایید توکن و دریافت اطلاعات کاربر
-          // نکته: شما باید یک مسیر GET /auth/me در بک‌اِند بسازید (در پایین توضیح داده‌ام)
           const response = await api.get('/auth/me', {
             headers: { Authorization: `Bearer ${token}` }
           });
@@ -62,7 +61,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     initializeAuth();
   }, []);
 
-  // تابع لاگین
+  // تابع لاگین با استفاده از سیستم احراز هویت Pi Network
   const login = async (pi_user_id: string, username: string) => {
     try {
       const response = await api.post('/auth/pi-login', { pi_user_id, username });
@@ -79,7 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (error: any) {
       console.error('Login Error:', error.response?.data || error.message);
-      throw error; // خطا را به کامپوننت (Login Page) پرتاب می‌کنیم تا پیام نمایش دهد
+      throw error; // خطا را به کامپوننت فراخوان‌کننده منتقل می‌کنیم
     }
   };
 
@@ -98,7 +97,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 };
 
 // Hook اختصاصی برای استفاده راحت در کامپوننت‌ها
-export const useAuth = () => {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
