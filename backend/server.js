@@ -1,68 +1,79 @@
-// backend/server.js
-
-require('dotenv').config();
+// backend/routes/payment.js (یا مستقیماً در server.js)
 const express = require('express');
-const cors = require('cors');
-const mongoose = require('mongoose');
+const router = express.Router();
+const Transaction = require('../models/Transaction'); // استفاده از مدل موجود در پروژه شما
 
-// وارد کردن مسیرهای (Routes) ماژولار
-const authRoutes = require('./routes/auth');
-const paymentRoutes = require('./routes/payment');
-const adminRoutes = require('./routes/admin');
+// ۱. ایجاد درخواست اولیه پرداخت
+router.post('/create', async (req, res) => {
+  try {
+    const { amount, type, metadata } = req.body;
 
-const app = express();
-
-// --- Middleware ---
-
-// تنظیم CORS برای اجازه دادن به فرانت‌اِند
-app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-    credentials: true
-}));
-
-// اجازه دادن به ارسال داده‌های JSON در بدنه درخواست (Body)
-app.use(express.json());
-
-// --- Database Connection ---
-const mongoURI = process.env.DATABASE_URL;
-mongoose.connect(mongoURI)
-    .then(() => console.log('✅ MongoDB Connected Successfully'))
-    .catch(err => console.error('❌ MongoDB Connection Error:', err));
-
-// --- Routes Registration ---
-
-// مسیرهای احراز هویت (Register/Login)
-app.use('/api/auth', authRoutes);
-
-// مسیرهای پرداخت (Create Payment/History)
-app.use('/api/payments', paymentRoutes);
-
-// مسیرهای ادمین (Stats/Transactions)
-app.use('/api/admin', adminRoutes);
-
-// --- Error Handling ---
-
-// هندلر برای مسیرهایی که وجود ندارند (404)
-app.use((req, res) => {
-    res.status(404).json({
-        success: false,
-        message: 'Route not found'
+    // ایجاد یک تراکنش در وضعیت 'PENDING'
+    const newTransaction = new Transaction({
+      amount,
+      type, // مثلاً 'PRODUCT_PURCHASE' یا 'MEMBERSHIP'
+      status: 'PENDING',
+      metadata: metadata, // ذخیره اطلاعات محصول (productId و غیره)
+      createdAt: new Date()
     });
-});
 
-// هندلر برای خطاهای کلی سرور (500)
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({
-        success: false,
-        message: 'Something went wrong on the server!'
+    await newTransaction.save();
+
+    // برگرداندن orderId به فرانت‌اِند برای استفاده در Pi SDK
+    res.status(201).json({
+      success: true,
+      orderId: newTransaction._id
     });
+  } catch (error) {
+    console.error("Create Payment Error:", error);
+    res.status(500).json({ success: false, message: "Failed to create transaction" });
+  }
 });
 
-// --- Server Start ---
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`🚀 Server is running in ${process.env.NODE_ENV || 'development'} mode`);
-    console.log(`📡 Listening on port: ${PORT}`);
-    console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL}`);
+// ۲. تایید تراکنش (Server Approval)
+// در این مرحله سرور تایید می‌کند که تراکنش با قوانین شما همخوانی دارد
+router.post('/approve', async (req, res) => {
+  try {
+    const { paymentId } = req.body; 
+    // در دنیای واقعی، اینجا باید چک کنید که آیا کاربر اجازه انجام این عملیات را دارد یا خیر
+
+    res.status(200).json({ success: true, message: "Transaction approved by server" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Approval failed" });
+  }
 });
+
+// ۳. تکمیل نهایی تراکنش (Completion)
+// وقتی Pi شبکه تایید می‌کند، این مرحله فراخوانی می‌شود تا محصول به کاربر داده شود
+router.post('/complete', async (req, res) => {
+  try {
+    const { paymentId, txid, amount, productId } = req.body;
+
+    // پیدا کردن تراکنش بر اساس paymentId (که همان orderId از مرحله اول است)
+    const transaction = await Transaction.findById(paymentId);
+
+    if (!transaction) {
+      return res.status(404).json({ success: false, message: "Transaction not found" });
+    }
+
+    // آپدیت وضعیت تراکنش
+    transaction.status = 'COMPLETED';
+    transaction.txid = txid; // ذخیره شناسه تراکنش شبکه Pi برای پیگیری‌های بعدی
+    await transaction.save();
+
+    // --- منطق اصلی بیزنس شما اینجا قرار می‌گیرد ---
+    // اگر productId مربوط به عضویت بود:
+    if (productId === 1) { 
+       // کد مربوط به فعال‌سازی عضویت کاربر در دیتابیس (مثلاً تغییر role کاربر به MEMBER)
+       console.log("Activating Membership for user...");
+    }
+    // -------------------------------------------
+
+    res.status(200).json({ success: true, message: "Payment completed and membership activated!" });
+  } catch (error) {
+    console.error("Complete Payment Error:", error);
+    res.status(500).json({ success: false, message: "Failed to complete transaction" });
+  }
+});
+
+module.exports = router;
