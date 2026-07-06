@@ -1,12 +1,14 @@
 import React from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from './hooks/useAuth'; // اصلاح شد: استفاده از Hook موجود در پروژه
+// اصلاح شد: استفاده از مسیر درست Hook مطابق با ساختار پروژه
+import { useAuth } from './hooks/useAuth'; 
 
 // صفحات و کامپوننت‌ها
 import Home from './pages/Home';
 import SignIn from './components/SignIn';
 import Shop from './pages/Shop';
-import EngagementTasksPage from './pages/EngagementTasksPage';
+// اصلاح نام فایل طبق ساختار فایل‌های شما در پوشه pages/Engagement
+import EngagementTasksPage from './pages/Engagement/TasksPage';
 
 const LoadingScreen = () => (
   <div style={{ 
@@ -25,17 +27,17 @@ const LoadingScreen = () => (
       width: '40px', 
       height: '40px', 
       animation: 'spin 2s linear infinite' 
-    }}></div >
+    }}></div>
     <p style={{ marginTop: '20px', color: '#555' }}>Authenticating...</p>
     <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
   </div>
 );
 
 const AppRouter = () => {
-  // دریافت وضعیت‌ها از Hook موجود در پروژه
+  // دریافت وضعیت‌ها از Hook اختصاصی پروژه
   const { user, loading, isLoggingIn } = useAuth();
 
-  // نمایش صفحه Loading
+  // نمایش صفحه Loading در هنگام بررسی توکن یا در حال ورود
   if (loading || isLoggingIn) {
     return <LoadingScreen />;
   }
@@ -46,13 +48,13 @@ const AppRouter = () => {
         {/* مسیرهای عمومی */}
         <Route path="/" element={<Home />} />
         
-        {/* مسیر لاگین */}
+        {/* مسیر لاگین - اگر کاربر لاگین کرده باشد به Shop هدایت می‌شود */}
         <Route 
           path="/login" 
           element={user ? <Navigate to="/shop" replace /> : <SignIn />} 
         />
 
-        {/* مسیرهای محافظت شده */}
+        {/* مسیرهای محافظت شده - فقط برای کاربران لاگین شده */}
         <Route 
           path="/tasks" 
           element={user ? <EngagementTasksPage /> : <Navigate to="/login" replace />} 
@@ -63,7 +65,7 @@ const AppRouter = () => {
           element={user ? <Shop /> : <Navigate to="/login" replace />} 
         />
 
-        {/* مدیریت 404 */}
+        {/* مدیریت خطای 404 */}
         <Route path="*" element={<div style={{padding: '20px'}}>404 - Page Not Found</div>} />
       </Routes>
     </Router>
