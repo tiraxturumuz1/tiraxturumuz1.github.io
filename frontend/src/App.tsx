@@ -1,10 +1,14 @@
 // frontend/src/App.tsx
 import React from 'react';
 import AppRouter from './Router';
+import { AuthProvider } from './context/AuthContext';
 
-function App() {
-  // توجه: تمام مدیریت صفحات و لاگین باید در Router.tsx انجام شود
-  return <AppRouter />;
-}
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AppRouter />
+    </AuthProvider>
+  );
+};
 
 export default App;
