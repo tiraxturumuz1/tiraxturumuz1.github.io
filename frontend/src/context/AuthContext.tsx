@@ -20,7 +20,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// تنظیم پایه Axios برای ارسال خودکار توکن در هر درخواست
+// تنظیم پایه Axios
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
 });
@@ -30,14 +30,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // این افکت وقتی اپلیکیشن برای اولین بار لود می‌شود اجرا می‌شود
   useEffect(() => {
     const initializeAuth = async () => {
       const token = localStorage.getItem('token');
       
       if (token) {
         try {
-          // یک درخواست به بک‌اِند برای تایید توکن و دریافت اطلاعات کاربر
           const response = await api.get('/auth/me', {
             headers: { Authorization: `Bearer ${token}` }
           });
@@ -61,28 +59,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     initializeAuth();
   }, []);
 
-  // تابع لاگین با استفاده از سیستم احراز هویت Pi Network
   const login = async (pi_user_id: string, username: string) => {
     try {
       const response = await api.post('/auth/pi-login', { pi_user_id, username });
       
       if (response.data.success) {
         const { token, user: userData } = response.data;
-        
-        // ۱. ذخیره در localStorage
         localStorage.setItem('token', token);
-        
-        // ۲. آپدیت استیت‌های اپلیکیشن
         setUser(userData);
         setIsAuthenticated(true);
       }
     } catch (error: any) {
       console.error('Login Error:', error.response?.data || error.message);
-      throw error; // خطا را به کامپوننت فراخوان‌کننده منتقل می‌کنیم
+      throw error;
     }
   };
 
-  // تابع خروج
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
@@ -96,7 +88,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Hook اختصاصی برای استفاده راحت در کامپوننت‌ها
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
