@@ -2,14 +2,12 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import axios from 'axios';
 
-// تعریف ساختار اطلاعات کاربر
 export interface User {
   id: string;
   username: string;
   role: 'user' | 'admin';
 }
 
-// تعریف ساختار Context
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
@@ -22,6 +20,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // تنظیم پایه Axios
 const api = axios.create({
+  // حتماً در فایل .env فرانت‌اِند، VITE_API_URL را ست کنید
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
 });
 
@@ -32,6 +31,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const initializeAuth = async () => {
+      // در ابتدا لودینگ را true نگه می‌داریم
+      setLoading(true);
+      
       const token = localStorage.getItem('token');
       
       if (token) {
@@ -40,19 +42,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             headers: { Authorization: `Bearer ${token}` }
           });
 
-          if (response.data.success) {
+          if (response.data && response.data.success) {
             setUser(response.data.user);
             setIsAuthenticated(true);
           } else {
-            throw new Error('Invalid token');
+            throw new Error('Invalid token response');
           }
         } catch (error) {
           console.error('Auth initialization failed:', error);
+          // در صورت خطا، حتماً پاکسازی کنید تا کاربر در وضعیت لودینگ گیر نکند
           localStorage.removeItem('token');
           setUser(null);
           setIsAuthenticated(false);
         }
+      } else {
+        // اگر توکنی وجود نداشت، مستقیماً از حالت لودینگ خارج شویم
+        setUser(null);
+        setIsAuthenticated(false);
       }
+      
+      // بسیار مهم: در هر شرایطی (موفق یا شکست) لودینگ را تمام کن
       setLoading(false);
     };
 
@@ -63,7 +72,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const response = await api.post('/auth/pi-login', { pi_user_id, username });
       
-      if (response.data.success) {
+      if (response.data && response.data.success) {
         const { token, user: userData } = response.data;
         localStorage.setItem('token', token);
         setUser(userData);
@@ -91,6 +100,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
+    // اگر این خطا را دیدید، یعنی AuthProvider در main.tsx فراموش شده است
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
