@@ -3,7 +3,7 @@ name: Build and Deploy Frontend
 on:
   push:
     branches:
-      - main  # اگر نام برنچ اصلی شما master است، اینجا را به master تغییر دهید
+      - main
 
 jobs:
   build-and-deploy:
@@ -17,7 +17,7 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json # اگر فایل lock ندارید این خط را حذف کنید
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
         run: |
@@ -32,5 +32,5 @@ jobs:
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: frontend/dist # مشخص می‌کند که فقط محتویات پوشه ساخته شده را منتشر کند
-          branch: gh-pages     # یک شاخه جدید به نام gh-pages برای سایت می‌سازد
+          folder: frontend/dist
+          branch: gh-pages
