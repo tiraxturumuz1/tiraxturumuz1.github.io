@@ -1,6 +1,6 @@
 // frontend/src/Router.tsx
 import React from 'react';
-// تغییر BrowserRouter به HashRouter برای سازگاری کامل با GitHub Pages
+// استفاده از HashRouter برای سازگاری با GitHub Pages
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 
@@ -17,14 +17,40 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
+/**
+ * ProtectedRoute با قابلیت جلوگیری از کرش (Error Handling)
+ * اگر Context لود نشده باشد، به جای صفحه سفید، لودینگ نشان می‌دهد.
+ */
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { isAuthenticated, loading } = useAuth();
+  const auth = useAuth();
 
-  if (loading) {
-    // اصلاح یک غلط املایی کوچک در متن بارگذاری
-    return <div className="loading-screen">در حال بارگذاری...</div>;
+  // ۱. جلوگیری از کرش اگر useAuth مقدار undefined برگرداند (بسیار مهم)
+  if (!auth) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <p>در حال برقراری ارتباط با سرور...</p>
+      </div>
+    );
   }
 
+  const { isAuthenticated, loading } = auth;
+
+  // ۲. نمایش وضعیت بارگذاری
+  if (loading) {
+    return (
+      <div className="loading-screen" style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontSize: '1.2rem' 
+      }}>
+        در حال بارگذاری...
+      </div>
+    );
+  }
+
+  // ۳. بررسی احراز هویت
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
@@ -40,7 +66,7 @@ const AppRouter = () => {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<SignIn />} />
 
-        {/* بخش پرداخت و تاریخچه - محافظت شده */}
+        {/* بخش‌های محافظت شده با استفاده از ProtectedRoute */}
         <Route 
           path="/payment" 
           element={
@@ -59,11 +85,25 @@ const AppRouter = () => {
           } 
         />
 
-        {/* سایر مسیرهای محافظت شده */}
-        <Route path="/shop" element={<ProtectedRoute><Shop /></ProtectedRoute>} />
-        <Route path="/tasks" element={<ProtectedRoute><TasksPage /></ProtectedRoute>} />
+        <Route 
+          path="/shop" 
+          element={
+            <ProtectedRoute>
+              <Shop />
+            </ProtectedRoute>
+          } 
+        />
 
-        {/* مسیر پیش‌فرض در صورت نبود مسیر صحیح */}
+        <Route 
+          path="/tasks" 
+          element={
+            <ProtectedRoute>
+              <TasksPage />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* مسیر پیش‌فرض: اگر آدرس اشتباه بود، به صفحه اصلی برگردان */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
