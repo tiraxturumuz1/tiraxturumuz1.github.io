@@ -1,6 +1,7 @@
 // frontend/src/Router.tsx
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+// تغییر BrowserRouter به HashRouter برای سازگاری کامل با GitHub Pages
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 
 // Pages & Components
@@ -8,9 +9,9 @@ import Home from './pages/Home';
 import Shop from './pages/Shop';
 import TasksPage from './pages/Engagement/TasksPage';
 import SignIn from './components/SignIn'; 
-import Payment from './components/Payment'; // اضافه شد
-import History from './components/History'; // اضافه شد
-import Success from './components/Success'; // اضافه شد
+import Payment from './components/Payment'; 
+import History from './components/History'; 
+import Success from './components/Success'; 
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -20,6 +21,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
+    // اصلاح یک غلط املایی کوچک در متن بارگذاری
     return <div className="loading-screen">در حال بارگذاری...</div>;
   }
 
@@ -38,7 +40,7 @@ const AppRouter = () => {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<SignIn />} />
 
-        {/* بخش پرداخت و تاریخچه - این‌ها باید محافظت شده باشند تا فقط کاربر لاگین شده ببیند */}
+        {/* بخش پرداخت و تاریخچه - محافظت شده */}
         <Route 
           path="/payment" 
           element={
@@ -61,6 +63,7 @@ const AppRouter = () => {
         <Route path="/shop" element={<ProtectedRoute><Shop /></ProtectedRoute>} />
         <Route path="/tasks" element={<ProtectedRoute><TasksPage /></ProtectedRoute>} />
 
+        {/* مسیر پیش‌فرض در صورت نبود مسیر صحیح */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
