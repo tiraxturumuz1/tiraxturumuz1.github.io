@@ -7,12 +7,8 @@ import { useAuth } from './context/AuthContext';
 import Home from './pages/Home';
 import Shop from './pages/Shop';
 import TasksPage from './pages/Engagement/TasksPage';
-
-// وارد کردن کامپوننت SignIn که ساخته شده است
-// اگر فایل شما در components/SignIn.tsx است، این خط درست است
 import SignIn from './components/SignIn'; 
 
-// کامپوننت محافظ برای مسیرهای خصوصی (Private Routes)
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
@@ -25,7 +21,6 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }
 
   if (!isAuthenticated) {
-    // کاربر لاگین نکرده، به صفحه ورود هدایت می‌شود
     return <Navigate to="/login" replace />;
   }
 
@@ -36,13 +31,9 @@ const AppRouter = () => {
   return (
     <Router>
       <Routes>
-        {/* مسیرهای عمومی */}
         <Route path="/" element={<Home />} />
-        
-        {/* مسیر ورود - حالا از کامپوننت واقعی استفاده می‌کند */}
         <Route path="/login" element={<SignIn />} />
 
-        {/* مسیرهای محافظت شده (فقط برای کاربران لاگین شده) */}
         <Route 
           path="/shop" 
           element={
@@ -61,7 +52,6 @@ const AppRouter = () => {
           } 
         />
 
-        {/* مدیریت مسیرهای اشتباه: هدایت به صفحه اصلی */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
