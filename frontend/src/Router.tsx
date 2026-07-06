@@ -7,11 +7,17 @@ import { useAuth } from './context/AuthContext';
 import Home from './pages/Home';
 import Shop from './pages/Shop';
 import TasksPage from './pages/Engagement/TasksPage';
-// فرض بر این است که یک صفحه Login دارید، اگر ندارید باید ساخته شود
-// import LoginPage from './pages/Login'; 
+
+// وارد کردن کامپوننت SignIn که ساخته شده است
+// اگر فایل شما در components/SignIn.tsx است، این خط درست است
+import SignIn from './components/SignIn'; 
 
 // کامپوننت محافظ برای مسیرهای خصوصی (Private Routes)
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+}
+
+const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
@@ -19,11 +25,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (!isAuthenticated) {
-    // به جای صفحه Register، کاربر را به صفحه Login می‌فرستیم
+    // کاربر لاگین نکرده، به صفحه ورود هدایت می‌شود
     return <Navigate to="/login" replace />;
   }
 
-  return <React\\Fragment>{children}</React\\.Fragment>;
+  return <React.Fragment>{children}</React.Fragment>;
 };
 
 const AppRouter = () => {
@@ -32,7 +38,9 @@ const AppRouter = () => {
       <Routes>
         {/* مسیرهای عمومی */}
         <Route path="/" element={<Home />} />
-        <Route path="/login" element={<div>صفحه ورود با Pi (در حال ساخت)</div>} />
+        
+        {/* مسیر ورود - حالا از کامپوننت واقعی استفاده می‌کند */}
+        <Route path="/login" element={<SignIn />} />
 
         {/* مسیرهای محافظت شده (فقط برای کاربران لاگین شده) */}
         <Route 
@@ -53,7 +61,7 @@ const AppRouter = () => {
           } 
         />
 
-        {/* مدیریت مسیرهای اشتباه */}
+        {/* مدیریت مسیرهای اشتباه: هدایت به صفحه اصلی */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
