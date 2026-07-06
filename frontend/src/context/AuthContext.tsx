@@ -1,80 +1,107 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import axiosClient from '../lib/axiosClient';
+// frontend/src/context/AuthContext.tsx
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import axios from 'axios';
 
-const AuthContext = createContext();
+// تعریف ساختار اطلاعات کاربر
+interface User {
+  id: string;
+  username: string;
+  role: 'user' | 'admin';
+}
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); // برای بارگذاری اولیه اپلیکیشن
-  const [isLoggingIn, setIsLoggingIn] = useState(false); // برای وضعیت حین عملیات لاگین
+// تعریف ساختار Context
+interface AuthContextType {
+  user: User | null;
+  isAuthenticated: boolean;
+  loading: boolean;
+  login: (pi_user_id: string, username: string) => Promise<void>;
+  logout: () => void;
+}
 
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// تنظیم پایه Axios برای ارسال خودکار توکن در هر درخواست
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+});
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  // این افکت وقتی اپلیکیشن برای اولین بار لود می‌شود اجرا می‌شود
   useEffect(() => {
-    const initAuth = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const savedUser = localStorage.getItem('user');
-        
-        if (token && savedUser) {
-          // تایید توکن با سرور
-          const response = await axiosClient.get("/user/me");
-          if (response.data) {
-            setUser(response.data);
+    const initializeAuth = async () => {
+      const token = localStorage.getItem('token');
+      
+      if (token) {
+        try {
+          // یک درخواست به بک‌اِند برای تایید توکن و دریافت اطلاعات کاربر
+          // نکته: شما باید یک مسیر GET /auth/me در بک‌اِند بسازید (در پایین توضیح داده‌ام)
+          const response = await api.get('/auth/me', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+
+          if (response.data.success) {
+            setUser(response.data.user);
+            setIsAuthenticated(true);
           } else {
-            // اگر توکن بود ولی سرور کاربر را نشناخت، پاک کن
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
+            throw new Error('Invalid token');
           }
+        } catch (error) {
+          console.error('Auth initialization failed:', error);
+          localStorage.removeItem('token');
+          setUser(null);
+          setIsAuthenticated(false);
         }
-      } catch (error) {
-        console.error("Initial auth check failed:", error);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-      } finally {
-        setLoading(false);
       }
+      setLoading(false);
     };
-    initAuth();
+
+    initializeAuth();
   }, []);
 
-  const loginWithPi = async () => {
-    setIsLoggingIn(true); // شروع عملیات
+  // تابع لاگین
+  const login = async (pi_user_id: string, username: string) => {
     try {
-      const response = await axiosClient.post('/auth/pi-login');
-      const { user: userData, token } = response.data;
-
-      // ذخیره در localStorage
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(userData));
-
-      // آپدیت State اصلی
-      setUser(userData);
-      return response.data;
-    } catch (error) {
-      console.error("Pi Login Error:", error);
-      throw error;
-    } finally {
-      setIsLoggingIn(false); // پایان عملیات (چه موفق چه خطا)
+      const response = await api.post('/auth/pi-login', { pi_user_id, username });
+      
+      if (response.data.success) {
+        const { token, user: userData } = response.data;
+        
+        // ۱. ذخیره در localStorage
+        localStorage.setItem('token', token);
+        
+        // ۲. آپدیت استیت‌های اپلیکیشن
+        setUser(userData);
+        setIsAuthenticated(true);
+      }
+    } catch (error: any) {
+      console.error('Login Error:', error.response?.data || error.message);
+      throw error; // خطا را به کامپوننت (Login Page) پرتاب می‌کنیم تا پیام نمایش دهد
     }
   };
 
+  // تابع خروج
   const logout = () => {
     localStorage.removeItem('token');
-    localStorage.removeItem('user');
     setUser(null);
+    setIsAuthenticated(false);
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      loading, 
-      isLoggingIn, 
-      loginWithPi, 
-      logout, 
-      isAuthenticated: !!user 
-    }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+// Hook اختصاصی برای استفاده راحت در کامپوننت‌ها
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
