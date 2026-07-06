@@ -4,11 +4,11 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 
 export default defineConfig({
-  base: '/', 
+  // تغییر از '/' به './' برای حل مشکل لود نشدن فایل‌ها در GitHub Pages
+  base: './', 
   plugins: [react()],
   resolve: {
     alias: {
-      // این خط باعث می‌شود @ در کدها به پوشه src اشاره کند
       '@': path.resolve(__dirname, './src'),
     },
   },
@@ -26,7 +26,7 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    host: true, // اجازه می‌دهد در شبکه محلی و Docker در دسترس باشد
+    host: true,
     open: true,
   },
 })
