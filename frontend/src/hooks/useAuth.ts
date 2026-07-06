@@ -1,101 +1,93 @@
 // frontend/src/hooks/useAuth.ts
-import { useState, useEffect } from 'react'; // useEffect را اضافه کنید
-import axios from 'axios';
-// فرض بر این است که Pi SDK را در جای دیگری بارگذاری کرده‌اید
-// همچنین باید یک راه برای دریافت اولیه کاربر (مثلاً از localStorage) داشته باشید
-import { getPiUser } from '../lib/pi-sdk-wrapper'; // یا هر متدی که برای گرفتن اطلاعات دارید
+import { useState, useEffect } from 'react';
+// اصلاح شد: استفاده از axiosClient برای هماهنگی با Interceptorها
+import axiosClient from '../lib/axiosClient'; 
+import { getPiUser } from '../lib/pi-sdk-wrapper'; 
 
-// یک نوع برای کاربر تعریف کنید (می‌تواند ساده‌تر باشد)
 interface User {
   uid: string;
   username: string;
-  // ... سایر اطلاعات کاربر
+  role?: string;
 }
 
 export const useAuth = () => {
-  const [user, setUser] = useState<User | null>(null); // state برای کاربر اضافه شد
-  const [loading, setLoading] = useState(true); // شروع با loading: true برای بررسی اولیه
-  const [isLoggingIn, setIsLoggingIn] = useState(false); // state برای وضعیت لاگین در حال انجام
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // تابع برای بررسی اولیه کاربر (مثلاً از توکن ذخیره شده)
   const checkInitialAuth = async () => {
     setLoading(true);
     setError(null);
     try {
       const token = localStorage.getItem('token');
       if (token) {
-        // اینجا باید با بک‌اند چک کنید که آیا توکن معتبر است یا نه
-        // و اطلاعات کاربر را دریافت کنید.
-        // مثال:
-        const response = await axios.get('/api/auth/me', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+        // اصلاح شد: استفاده از axiosClient.get به جای axios.get
+        // چون axiosClient خودش توکن را از localStorage برمی‌دارد و به هدر اضافه می‌کند
+        const response = await axiosClient.get('/auth/me'); 
         if (response.data.user) {
           setUser(response.data.user);
         } else {
-          // توکن منقضی شده یا نامعتبر است
           localStorage.removeItem('token');
+          localStorage.removeItem('user');
         }
       }
     } catch (err: any) {
-      setError('خطا در بررسی وضعیت احراز هویت');
-      console.error(err);
-      localStorage.removeItem('token'); // حذف توکن در صورت خطا
+      console.error('Initial auth check failed:', err);
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      // در اینجا خطا را ست نمی‌کنیم تا کاربر در صفحه اصلی بماند، فقط لاگین را پاک می‌کنیم
     } finally {
       setLoading(false);
     }
   };
 
   const loginWithPi = async () => {
-    setIsLoggingIn(true); // شروع فرایند لاگین
+    setIsLoggingIn(true);
     setError(null);
     try {
-      // ۱. گرفتن اطلاعات کاربر از Pi SDK
-      // اطمینان حاصل کنید که getPiUser() به درستی کار می‌کند و یک شیء با uid و username برمی‌گرداند
       const piUser = await getPiUser(); 
       if (!piUser || !piUser.uid) {
         throw new Error("Unable to get Pi user information.");
       }
 
-      // ۲. ارسال شناسه کاربر به بک‌اند جدید
-      const response = await axios.post('/api/auth/pi-login', {
+      // اصلاح شد: استفاده از axiosClient برای ارسال درخواست لاگین
+      const response = await axiosClient.post('/auth/pi-login', {
         pi_user_id: piUser.uid,
-        username: piUser.username // اطمینان حاصل کنید که piUser.username موجود است
+        username: piUser.username
       });
 
-      // ۳. ذخیره توکن در LocalStorage و به‌روزرسانی state کاربر
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
-        setUser(response.data.user); // ذخیره اطلاعات کاربر در state
-        // دیگر نیازی به تغییر window.location.href نیست، Router خودش هدایت می‌کند
+        localStorage.setItem('user', JSON.stringify(response.data.user)); // ذخیره کاربر برای استفاده در سایر جاها
+        setUser(response.data.user);
       } else {
         throw new Error("Login failed: No token received.");
       }
     } catch (err: any) {
-      setError('خطا در احراز هویت با شبکه Pi');
+      const errorMsg = err.response?.data?.message || 'خطا در احراز هویت با شبکه Pi';
+      setError(errorMsg);
       console.error('Login error:', err);
-      // اگر خطایی رخ داد، توکن قبلی را پاک کنید
       localStorage.removeItem('token');
-      setUser(null); // پاک کردن اطلاعات کاربر در صورت خطا
+      localStorage.removeItem('user');
+      setUser(null);
     } finally {
-      setIsLoggingIn(false); // پایان فرایند لاگین
-      setLoading(false); // در اینجا هم loading را false می‌کنیم چون بررسی اولیه تمام شده
+      setIsLoggingIn(false);
+      setLoading(false);
     }
   };
 
-  // اثر برای اجرای بررسی اولیه هنگام بارگذاری کامپوننت
   useEffect(() => {
     checkInitialAuth();
   }, []);
 
-  // تابع logout (اختیاری اما مفید)
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setUser(null);
-    // شاید نیاز باشد به صفحه لاگین هدایت شوید
-    window.location.href = '/login';
+    // با توجه به استفاده از HashRouter، هدایت بهتر است اینگونه باشد:
+    window.location.hash = '/login';
   };
 
-  return { user, loading, isLoggingIn, error, loginWithPi, logout, checkInitialAuth }; // user و logout را اضافه کردیم
+  return { user, loading, isLoggingIn, error, loginWithPi, logout, checkInitialAuth };
 };
