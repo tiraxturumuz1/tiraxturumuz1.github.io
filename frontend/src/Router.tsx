@@ -1,72 +1,60 @@
+// frontend/src/Router.tsx
 import React from 'react';
-import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-// اصلاح شد: استفاده از مسیر درست Hook مطابق با ساختار پروژه
-import { useAuth } from './hooks/useAuth'; 
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
 
-// صفحات و کامپوننت‌ها
+// Pages
 import Home from './pages/Home';
-import SignIn from './components/SignIn';
 import Shop from './pages/Shop';
-// اصلاح نام فایل طبق ساختار فایل‌های شما در پوشه pages/Engagement
-import EngagementTasksPage from './pages/Engagement/TasksPage';
+import TasksPage from './pages/Engagement/TasksPage';
+// فرض بر این است که یک صفحه Login دارید، اگر ندارید باید ساخته شود
+// import LoginPage from './pages/Login'; 
 
-const LoadingScreen = () => (
-  <div style={{ 
-    display: 'flex', 
-    flexDirection: 'column', 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    height: '100vh', 
-    fontFamily: 'sans-serif',
-    backgroundColor: '#f9f9f9' 
-  }}>
-    <div className="spinner" style={{ 
-      border: '4px solid #f3f3f3', 
-      borderTop: '4px solid #3498db', 
-      borderRadius: '50%', 
-      width: '40px', 
-      height: '40px', 
-      animation: 'spin 2s linear infinite' 
-    }}></div>
-    <p style={{ marginTop: '20px', color: '#555' }}>Authenticating...</p>
-    <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
-  </div>
-);
+// کامپوننت محافظ برای مسیرهای خصوصی (Private Routes)
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated, loading } = useAuth();
 
-const AppRouter = () => {
-  // دریافت وضعیت‌ها از Hook اختصاصی پروژه
-  const { user, loading, isLoggingIn } = useAuth();
-
-  // نمایش صفحه Loading در هنگام بررسی توکن یا در حال ورود
-  if (loading || isLoggingIn) {
-    return <LoadingScreen />;
+  if (loading) {
+    return <div className="loading-screen">در حال بارگذاری...</div>;
   }
 
+  if (!isAuthenticated) {
+    // به جای صفحه Register، کاربر را به صفحه Login می‌فرستیم
+    return <Navigate to="/login" replace />;
+  }
+
+  return <React\\Fragment>{children}</React\\.Fragment>;
+};
+
+const AppRouter = () => {
   return (
     <Router>
       <Routes>
         {/* مسیرهای عمومی */}
         <Route path="/" element={<Home />} />
-        
-        {/* مسیر لاگین - اگر کاربر لاگین کرده باشد به Shop هدایت می‌شود */}
-        <Route 
-          path="/login" 
-          element={user ? <Navigate to="/shop" replace /> : <SignIn />} 
-        />
+        <Route path="/login" element={<div>صفحه ورود با Pi (در حال ساخت)</div>} />
 
-        {/* مسیرهای محافظت شده - فقط برای کاربران لاگین شده */}
-        <Route 
-          path="/tasks" 
-          element={user ? <EngagementTasksPage /> : <Navigate to="/login" replace />} 
-        />
-        
+        {/* مسیرهای محافظت شده (فقط برای کاربران لاگین شده) */}
         <Route 
           path="/shop" 
-          element={user ? <Shop /> : <Navigate to="/login" replace />} 
+          element={
+            <ProtectedRoute>
+              <Shop />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/tasks" 
+          element={
+            <ProtectedRoute>
+              <TasksPage />
+            </ProtectedRoute>
+          } 
         />
 
-        {/* مدیریت خطای 404 */}
-        <Route path="*" element={<div style={{padding: '20px'}}>404 - Page Not Found</div>} />
+        {/* مدیریت مسیرهای اشتباه */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );
