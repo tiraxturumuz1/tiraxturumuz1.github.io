@@ -1,26 +1,26 @@
-// backend/test-db.js
-require('dotenv').config(); // برای خواندن فایل .env
-const mongoose = require('mongoose');
 
-const dbUrl = process.env.DATABASE_URL;
+const { MongoClient, ServerApiVersion } = require('mongodb');
+const uri = "mongodb+srv://tiraxturumuz1_db_usertiraxturumuz1:<09371045082@cluster0.prptbtg.mongodb.net/?appName=Cluster0";
 
-if (!dbUrl) {
-  console.error("❌ خطا: DATABASE_URL در فایل .env پیدا نشد!");
-  process.exit(1);
+// Create a MongoClient with a MongoClientOptions object to set the Stable API version
+const client = new MongoClient(uri, {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  }
+});
+
+async function run() {
+  try {
+    // Connect the client to the server	(optional starting in v4.7)
+    await client.connect();
+    // Send a ping to confirm a successful connection
+    await client.db("admin").command({ ping: 1 });
+    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+  } finally {
+    // Ensures that the client will close when you finish/error
+    await client.close();
+  }
 }
-
-console.log("⏳ در حال تلاش برای اتصال به MongoDB...");
-console.log("🔗 رشته اتصال استفاده شده:", dbUrl.split('@')[1]); // برای امنیت، فقط بخش آدرس را نشان می‌دهد
-
-mongoose.connect(dbUrl)
-  .then(() => {
-    console.log("✅ موفقیت‌آمیز! اتصال به دیتابیس برقرار شد.");
-    console.log("🚀 حالا می‌توانید سرور اصلی خود را با خیال راحت اجرا کنید.");
-    process.exit(0);
-  })
-  .catch((err) => {
-    console.error("❌ خطا در اتصال به دیتابیس:");
-    console.error(err.message);
-    console.log("\n💡 نکته: اگر خطا مربوط به Authentication بود، نام کاربری را در .env چک کنید.");
-    process.exit(1);
-  });
+run().catch(console.dir);
