@@ -3,11 +3,11 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
-import { AuthProvider } from './context/AuthContext' // اضافه شد
+import { AuthProvider } from './context/AuthContext' // حتماً این را اضافه کنید
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <AuthProvider> {/* بسیار مهم: کل اپلیکیشن باید در AuthProvider باشد */}
+    <AuthProvider> 
       <App />
     </AuthProvider>
   </React.StrictMode>,
