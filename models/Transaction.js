@@ -1,11 +1,16 @@
+// models/Transaction.js
 const mongoose = require('mongoose');
 
 const transactionSchema = new mongoose.Schema({
-  // شناسه تراکنش که از شبکه Pi می‌گیریم (اثبات بلاکچینی)
-  piTransactionId: { 
+  // شناسه ای که سرور برای پیگیری سفارش ایجاد می کند
+  orderId: { 
     type: String, 
-    required: true, 
-    unique: true // جلوگیری از ثبت دوباره یک تراکنش تکراری
+    // unique: true // اگر بخواهیم یکتا باشد، باید موقع ایجاد مطمئن شویم تکراری نیست
+  },
+  // شناسه تراکنش در شبکه Pi (بعد از تکمیل)
+  txid: { 
+    type: String, 
+    // unique: true // این شناسه باید حتما یکتا باشد
   },
   // مبلغ پرداخت شده
   amount: { 
@@ -25,19 +30,15 @@ const transactionSchema = new mongoose.Schema({
   // جزئیات اضافی از سمت فرانت‌اِند (مثلاً چه محصولی خریده)
   metadata: {
     productName: String,
-    orderId: String
+    productId: String // بهتر است شناسه عددی محصول را هم اینجا نگه داریم
   },
   // وضعیت تراکنش
   status: { 
     type: String, 
-    enum: ['pending', 'completed', 'failed'], 
-    default: 'completed' 
+    enum: ['PENDING', 'COMPLETED', 'FAILED'], 
+    default: 'PENDING' // پیش‌فرض باید PENDING باشد
   },
   // زمان انجام تراکنش
-  createdAt: { 
-    type: Date, 
-    default: Date.now 
-  }
-});
+}, { timestamps: true }); // timestamps به طور خودکار createdAt و updatedAt را اضافه می کند
 
 module.exports = mongoose.model('Transaction', transactionSchema);
