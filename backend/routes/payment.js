@@ -1,22 +1,25 @@
+// backend/routes/payment.js
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 const { authenticateToken } = require('../middleware/auth');
+const { PrismaClient } = require('@prisma/client'); // اضافه کردن Prisma
+
+const prisma = new PrismaClient(); // تعریف کلاینت پرایزما
 
 /**
  * @route   POST /api/payments/create
- * @desc    ایجاد یک درخواست پرداخت جدید در شبکه Pi
+ * @desc    ایجاد یک درخواست پرداخت جدید در شبکه Pi و ذخیره در دیتابیس
  * @access  Private (Requires JWT)
  */
 router.post('/create', authenticateToken, async (req, res) => {
     try {
         const { amount, orderId, currency } = req.body;
-        const userId = req.user.id; // دریافت شناسه کاربر از توکن JWT
+        const userId = req.user.id; 
 
         console.log(`[Payment] Initiating order ${orderId} for user ${userId}`);
 
-        // --- ارتباط با Pi Network API ---
-        // در اینجا از کلید امن PI_API_KEY که در .env است استفاده می‌کنیم
+        // ۱. ارتباط با Pi Network API
         const piResponse = await axios.post('https://api.minepi.com/v2/payments/create', {
             amount: amount,
             memo: `Order ID: ${orderId}`,
@@ -28,21 +31,33 @@ router.post('/create', authenticateToken, async (req, res) => {
             }
         });
 
-        // در دنیای واقعی، شما اینجا باید اطلاعات تراکنش را در دیتابیس ذخیره کنید
-        // با وضعیت "PENDING" (در انتظار تایید)
+        // ۲. ذخیره تراکنش در PostgreSQL با استفاده از Prisma
+        // نکته: فرض می‌کنیم در schema.prisma مدلی به نام Transaction داری
+        const newTransaction = await prisma.transaction.create({
+            data: {
+                userId: userId,
+                amount: parseFloat(amount),
+                orderId: orderId,
+                status: 'PENDING', // وضعیت اولیه
+                currency: currency || 'PI',
+                // اگر در اسکیما فیلد دیگری مثل piPaymentId داری اینجا اضافه کن
+            }
+        });
 
         res.status(200).json({
             success: true,
-            message: 'Payment request created successfully',
-            data: piResponse.data
+            message: 'Payment request created and recorded',
+            data: {
+                transaction: newTransaction,
+                piData: piResponse.data
+            }
         });
 
     } catch (error) {
         console.error('❌ Payment Route Error:', error.response?.data || error.message);
-        
         res.status(500).json({
             success: false,
-            message: 'Failed to process payment with Pi Network',
+            message: 'Failed to process payment',
             error: error.response?.data || error.message
         });
     }
@@ -50,16 +65,26 @@ router.post('/create', authenticateToken, async (req, res) => {
 
 /**
  * @route   GET /api/payments/history
- * @desc    دریافت تاریخچه پرداخت‌های یک کاربر خاص
+ * @desc    دریافت تاریخچه پرداخت‌های یک کاربر از PostgreSQL
  * @access  Private (Requires JWT)
  */
 router.get('/history', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
-        // در اینجا کوئری به MongoDB برای پیدا کردن تراکنش‌های این کاربر زده می‌شود
-        // مثال: const history = await Transaction.find({ userId });
-        res.json({ success: true, data: [] }); 
+
+        // جایگزین کردن کوئری MongoDB با کوئری Prisma
+        const history = await prisma.transaction.findMany({
+            where: {
+                userId: userId
+            },
+            orderBy: {
+                createdAt: 'desc' // جدیدترین‌ها اول
+            }
+        });
+
+        res.json({ success: true, data: history }); 
     } catch (error) {
+        console.error('❌ History Route Error:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 });
