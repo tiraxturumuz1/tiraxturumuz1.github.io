@@ -1,0 +1,18 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Transaction {
+  id        String   @id @default(uuid())
+  amount    Float
+  type      String
+  status    String
+  metadata  String   // در SQLite متادیتا را به صورت رشته (JSON stringify) ذخیره می‌کنیم
+  txid      String?
+  createdAt DateTime @default(now())
+}
