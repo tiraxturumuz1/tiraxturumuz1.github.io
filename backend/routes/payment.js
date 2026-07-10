@@ -14,7 +14,7 @@ const prisma = new PrismaClient();
  */
 router.post('/create', authenticateToken, async (req, res) => {
     try {
-        const { amount, orderId } = req.body; // orderId فعلاً فقط برای لاگ استفاده می‌شود چون در اسکیما نیست
+        const { amount, orderId } = req.body; // orderId حالا مهم است
         const userIdStr = req.user.id; 
 
         console.log(`[Payment] Initiating order ${orderId} for user ${userIdStr}`);
@@ -24,6 +24,17 @@ router.post('/create', authenticateToken, async (req, res) => {
 
         if (isNaN(userId)) {
             return res.status(400).json({ success: false, message: 'Invalid User ID format' });
+        }
+        
+        // بررسی اینکه آیا این orderId قبلاً در دیتابیس وجود دارد یا نه
+        const existingTransaction = await prisma.transaction.findUnique({
+            where: {
+                orderId: orderId
+            }
+        });
+
+        if (existingTransaction) {
+            return res.status(400).json({ success: false, message: `Order ID ${orderId} already exists.` });
         }
 
         // ۱. ارتباط با Pi Network API
@@ -38,11 +49,12 @@ router.post('/create', authenticateToken, async (req, res) => {
             }
         });
 
-        // ۲. ذخیره تراکنش در PostgreSQL (فقط با فیلدهای موجود در اسکیما تو)
+        // ۲. ذخیره تراکنش در PostgreSQL با orderId
         const newTransaction = await prisma.transaction.create({
             data: {
                 userId: userId,
                 amount: parseFloat(amount),
+                orderId: orderId, // حالا این فیلد در اسکیما وجود دارد
                 status: 'pending' // مطابق با نمونه اسکیما تو
             }
         });
@@ -58,10 +70,14 @@ router.post('/create', authenticateToken, async (req, res) => {
 
     } catch (error) {
         console.error('❌ Payment Route Error:', error.response?.data || error.message);
+        // اگر خطا به دلیل تکراری بودن orderId بود، پیام مناسب‌تری برگردان
+        if (error.code === 'P2002' && error.meta?.target?.includes('orderId')) {
+             return res.status(400).json({ success: false, message: `Order ID ${orderId} already exists.` });
+        }
         res.status(500).json({
             success: false,
             message: 'Failed to process payment',
-            error: error.response?.data || error.message
+            error: error.message 
         });
     }
 });
@@ -80,12 +96,22 @@ router.get('/history', authenticateToken, async (req, res) => {
         }
 
         // دریافت تاریخچه بر اساس userId عددی
+        // حالا می‌توانید تراکنش‌ها را با جزئیات بیشتری واکشی کنید، مثلاً نام کاربر
         const history = await prisma.transaction.findMany({
             where: {
                 userId: userId
             },
             orderBy: {
                 createdAt: 'desc'
+            },
+            include: { // اضافه کردن اطلاعات کاربر مرتبط
+                user: {
+                    select: { // فقط فیلدهای مورد نیاز را انتخاب کن
+                        id: true,
+                        username: true,
+                        piUserId: true
+                    }
+                }
             }
         });
 
