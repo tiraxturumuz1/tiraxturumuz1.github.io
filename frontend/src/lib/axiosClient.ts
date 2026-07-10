@@ -2,8 +2,8 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 const axiosClient = axios.create({
-  // اصلاح پورت به 3000 و استفاده از متغیر محیطی
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+  // اصلاح پورت به 5000 و استفاده از متغیر محیطی
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
   headers: {
     'Content-Type': 'application/json',
   },
