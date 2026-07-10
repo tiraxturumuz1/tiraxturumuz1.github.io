@@ -1,12 +1,12 @@
 import React from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'; // استفاده از Context
+import { useAuth } from './context/AuthContext'; // استفاده از Context
 
 // صفحات و کامپوننت‌ها
-import Home from '../pages/Home';
-import SignIn from '../components/SignIn';
-import Shop from '../pages/Shop';
-import EngagementTasksPage from '../pages/EngagementTasksPage';
+import Home from './pages/Home';
+import SignIn from './components/SignIn';
+import Shop from './pages/Shop';
+import EngagementTasksPage from './pages/Engagement/TasksPage';
 
 const LoadingScreen = () => (
   <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', fontFamily: 'sans-serif' }}>

@@ -2,7 +2,7 @@ import React from 'react';
 import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
-    const { user, isAuthenticated, login, logout } = useAuth();
+    const { user, isAuthenticated, loginWithPi, logout } = useAuth();
 
     return (
         <nav className="navbar">
@@ -14,7 +14,7 @@ const Navbar = () => {
                 
                 {/* اگر کاربر لاگین نکرده بود، دکمه Login را نشان بده */}
                 {!isAuthenticated ? (
-                    <button className="btn-login" onClick={login}>
+                    <button className="btn-login" onClick={() => loginWithPi().catch(() => undefined)}>
                         Login with Pi
                     </button>
                 ) : (
