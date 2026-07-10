@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Transaction {
@@ -12,7 +12,13 @@ model Transaction {
   amount    Float
   type      String
   status    String
-  metadata  String   // در SQLite متادیتا را به صورت رشته (JSON stringify) ذخیره می‌کنیم
+  metadata  Json     // در PostgreSQL از نوع داده اصلی JSON استفاده می‌کنیم که بسیار سریع است
   txid      String?
   createdAt DateTime @default(now())
 }
+
+// اگر مدل User را هم دارید، می‌توانید اینجا اضافه کنید
+// model User {
+//   id    String @id @default(uuid())
+//   email String @unique
+// }
