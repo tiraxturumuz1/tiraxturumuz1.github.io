@@ -1,6 +1,6 @@
 // frontend/src/Router.tsx
 import React from 'react';
-// استفاده از HashRouter برای سازگاری با GitHub Pages
+// استفاده از HashRouter برای سازگاری کامل با GitHub Pages (حل مشکل صفحه سفید و ۴۰۴)
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 
@@ -24,7 +24,7 @@ interface ProtectedRouteProps {
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const auth = useAuth();
 
-  // ۱. جلوگیری از کرش اگر useAuth مقدار undefined برگرداند (بسیار مهم)
+  // ۱. جلوگیری از کرش اگر useAuth مقدار undefined برگرداند
   if (!auth) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -51,6 +51,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }
 
   // ۳. بررسی احراز هویت
+  // در HashRouter، وقتی به /login Navigate می‌کنیم، خودِ رانتر آن را به #/login تبدیل می‌کند
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
