@@ -10,19 +10,29 @@ datasource db {
 }
 
 model User {
-  id              Int      @id @default(autoincrement())
-  piUserId        String   @unique
-  username        String   @unique @default("Pi User")
-  role            String   @default("user") // می‌توانید از enum هم استفاده کنید
-  piWalletAddress String   @default("")
-  createdAt       DateTime @default(now())
+  id              Int            @id @default(autoincrement())
+  piUserId        String         @unique
+  username        String         @unique @default("Pi User")
+  role            String         @default("user") // می‌توانید از enum هم استفاده کنید
+  piWalletAddress String         @default("")
+  createdAt       DateTime       @default(now())
+  
+  // ایجاد رابطه یک‌به-چند: هر کاربر می‌تواند چندین تراکنش داشته باشد
+  transactions    Transaction[]
 }
 
 model Transaction {
-  id          Int      @id @default(autoincrement())
-  userId      Int
-  user        User     @relation(fields: [userId], references: [id])
-  amount      Float
-  status      String   // e.g., 'pending', 'completed', 'failed'
-  createdAt   DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  amount    Float
+  
+  // فیلد جدید که اضافه شد
+  orderId   String   @unique 
+  
+  status    String   // مقادیر پیشنهادی: 'pending', 'completed', 'failed'
+  createdAt DateTime @default(now())
+
+  // تعریف رابطه با مدل User
+  // این فیلد در دیتابیس ذخیره می‌شود و به مدل User متصل است
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
 }
