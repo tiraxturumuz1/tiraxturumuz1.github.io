@@ -3,11 +3,11 @@
     "target": "ESNext",
     "useDefineForClassFields": true,
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
-    "allowJs": true,             // بسیار مهم: اجازه استفاده از فایل‌های .jsx را می‌دهد
+    "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "strict": false,             // برای پروژه‌های ترکیبی بهتر است false باشد تا گیر ندهد
+    "strict": false,
     "forceConsistentCasingInFileNames": true,
     "module": "ESNext",
     "moduleResolution": "bundler",
@@ -15,7 +15,7 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "baseUrl": ".",
+    /* حذف baseUrl برای رفع خطای قرمز و استفاده مستقیم از paths */
     "paths": {
       "@/*": ["./src/*"]
     }
