@@ -3,9 +3,9 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 const { authenticateToken } = require('../middleware/auth');
-const { PrismaClient } = require('@prisma/client'); // اضافه کردن Prisma
+const { PrismaClient } = require('@prisma/client');
 
-const prisma = new PrismaClient(); // تعریف کلاینت پرایزما
+const prisma = new PrismaClient();
 
 /**
  * @route   POST /api/payments/create
@@ -14,16 +14,23 @@ const prisma = new PrismaClient(); // تعریف کلاینت پرایزما
  */
 router.post('/create', authenticateToken, async (req, res) => {
     try {
-        const { amount, orderId, currency } = req.body;
-        const userId = req.user.id; 
+        const { amount, orderId } = req.body; // orderId فعلاً فقط برای لاگ استفاده می‌شود چون در اسکیما نیست
+        const userIdStr = req.user.id; 
 
-        console.log(`[Payment] Initiating order ${orderId} for user ${userId}`);
+        console.log(`[Payment] Initiating order ${orderId} for user ${userIdStr}`);
+
+        // تبدیل ID از رشته به عدد برای مطابقت با اسکیما (Int)
+        const userId = parseInt(userIdStr);
+
+        if (isNaN(userId)) {
+            return res.status(400).json({ success: false, message: 'Invalid User ID format' });
+        }
 
         // ۱. ارتباط با Pi Network API
         const piResponse = await axios.post('https://api.minepi.com/v2/payments/create', {
             amount: amount,
             memo: `Order ID: ${orderId}`,
-            currency: currency || 'PI'
+            currency: 'PI'
         }, {
             headers: {
                 'Authorization': `Bearer ${process.env.PI_API_KEY}`,
@@ -31,16 +38,12 @@ router.post('/create', authenticateToken, async (req, res) => {
             }
         });
 
-        // ۲. ذخیره تراکنش در PostgreSQL با استفاده از Prisma
-        // نکته: فرض می‌کنیم در schema.prisma مدلی به نام Transaction داری
+        // ۲. ذخیره تراکنش در PostgreSQL (فقط با فیلدهای موجود در اسکیما تو)
         const newTransaction = await prisma.transaction.create({
             data: {
                 userId: userId,
                 amount: parseFloat(amount),
-                orderId: orderId,
-                status: 'PENDING', // وضعیت اولیه
-                currency: currency || 'PI',
-                // اگر در اسکیما فیلد دیگری مثل piPaymentId داری اینجا اضافه کن
+                status: 'pending' // مطابق با نمونه اسکیما تو
             }
         });
 
@@ -70,15 +73,19 @@ router.post('/create', authenticateToken, async (req, res) => {
  */
 router.get('/history', authenticateToken, async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = parseInt(req.user.id);
 
-        // جایگزین کردن کوئری MongoDB با کوئری Prisma
+        if (isNaN(userId)) {
+            return res.status(400).json({ success: false, message: 'Invalid User ID format' });
+        }
+
+        // دریافت تاریخچه بر اساس userId عددی
         const history = await prisma.transaction.findMany({
             where: {
                 userId: userId
             },
             orderBy: {
-                createdAt: 'desc' // جدیدترین‌ها اول
+                createdAt: 'desc'
             }
         });
 
