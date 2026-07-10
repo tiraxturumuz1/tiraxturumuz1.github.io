@@ -64,7 +64,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`==========================================`);
   console.log(`🚀 Server is running on port ${PORT}`);
-  consol.log(`🔗 API Base URL: http://localhost:${PORT}/api`);
+  console.log(`🔗 API Base URL: http://localhost:${PORT}/api`);
   console.log(` Database: PostgreSQL (via Prisma)`);
   console.log(`==========================================`);
 });
