@@ -1,3 +1,5 @@
+// backend/prisma/schema.prisma
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,18 +9,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Transaction {
-  id        String   @id @default(uuid())
-  amount    Float
-  type      String
-  status    String
-  metadata  Json     // در PostgreSQL از نوع داده اصلی JSON استفاده می‌کنیم که بسیار سریع است
-  txid      String?
-  createdAt DateTime @default(now())
+model User {
+  id              Int      @id @default(autoincrement())
+  piUserId        String   @unique
+  username        String   @unique @default("Pi User")
+  role            String   @default("user") // می‌توانید از enum هم استفاده کنید
+  piWalletAddress String   @default("")
+  createdAt       DateTime @default(now())
 }
 
-// اگر مدل User را هم دارید، می‌توانید اینجا اضافه کنید
-// model User {
-//   id    String @id @default(uuid())
-//   email String @unique
-// }
+model Transaction {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  amount      Float
+  status      String   // e.g., 'pending', 'completed', 'failed'
+  createdAt   DateTime @default(now())
+}
