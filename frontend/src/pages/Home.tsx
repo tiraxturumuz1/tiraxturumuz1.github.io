@@ -4,87 +4,86 @@ import { useNavigate } from 'react-router-dom';
 const Home: React.FC = () => {
   const navigate = useNavigate();
 
-  const containerStyle: React.CSSProperties = {
-    minHeight: '100vh',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: 'linear-gradient(135deg, #673ab7 0%, #311b92 100%)', // رنگ بنفش Pi
-    color: 'white',
-    textAlign: 'center',
-    padding: '20px',
-    fontFamily: 'Tahoma, sans-serif',
-    direction: 'rtl'
-  };
-
-  const cardStyle: React.CSSProperties = {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    backdropFilter: 'blur(10px)',
-    padding: '40px',
-    borderRadius: '24px',
-    boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
-    border: '1px solid rgba(255, 255, 255, 0.18)',
-    maxWidth: '500px',
-    width: '100%'
-  };
-
-  const buttonContainerStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '15px',
-    marginTop: '30px'
-  };
-
-  const primaryButtonStyle: React.CSSProperties = {
-    padding: '15px 30px',
-    fontSize: '18px',
-    fontWeight: 'bold',
-    color: '#673ab7',
-    backgroundColor: '#fff',
-    border: 'none',
-    borderRadius: '12px',
-    cursor: 'pointer',
-    transition: 'transform 0.2s',
-  };
-
-  const secondaryButtonStyle: React.CSSProperties = {
-    padding: '15px 30px',
-    fontSize: '18px',
-    fontWeight: 'bold',
-    color: '#fff',
-    backgroundColor: 'transparent',
-    border: '2px solid #fff',
-    borderRadius: '12px',
-    cursor: 'pointer',
+  // استایل‌های مدرن و هماهنگ با هویت Pi
+  const styles = {
+    container: {
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column' as const,
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'linear-gradient(135deg, #673ab7 0%, #311b92 100%)',
+      color: '#fff',
+      textAlign: 'center' as const,
+      padding: '20px',
+      fontFamily: '"Segoe UI", Tahoma, sans-serif',
+      direction: 'rtl' as const
+    },
+    card: {
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+      backdropFilter: 'blur(15px)',
+      padding: '40px',
+      borderRadius: '24px',
+      boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
+      border: '1px solid rgba(255, 255, 255, 0.15)',
+      maxWidth: '450px',
+      width: '100%'
+    },
+    title: { fontSize: '2rem', marginBottom: '10px' },
+    subtitle: { fontSize: '1rem', opacity: 0.8, marginBottom: '30px' },
+    buttonGroup: {
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: '12px'
+    },
+    button: {
+      padding: '14px',
+      fontSize: '16px',
+      fontWeight: 'bold' as const,
+      border: 'none',
+      borderRadius: '12px',
+      cursor: 'pointer',
+      transition: 'transform 0.2s, background 0.2s'
+    },
+    primaryBtn: {
+      backgroundColor: '#fff',
+      color: '#673ab7'
+    },
+    secondaryBtn: {
+      backgroundColor: 'transparent',
+      border: '2px solid rgba(255, 255, 255, 0.3)',
+      color: '#fff'
+    },
+    footer: {
+      marginTop: '40px',
+      fontSize: '12px',
+      opacity: 0.5
+    }
   };
 
   return (
-    <div style={containerStyle}>
-      <div style={cardStyle}>
-        <div style={{ fontSize: '60px', marginBottom: '20px' }}>π</div>
-        <h1 style={{ fontSize: '32px', marginBottom: '10px' }}>Welcome to Pi DAO</h1>
-        <p style={{ fontSize: '18px', opacity: 0.9, lineHeight: '1.6' }}>
-          مرکز مدیریت هوشمند و غیرمتمرکز تراکنش‌های شما در شبکه پای
+    <div style={styles.container}>
+      <div style={styles.card}>
+        <div style={{ fontSize: '50px', marginBottom: '10px' }}>π</div>
+        <h1 style={styles.title}>Welcome to Pi DAO</h1>
+        <p style={styles.subtitle}>
+          درگاه اختصاصی شما برای خدمات غیرمتمرکز در شبکه پای
         </p>
-        
-        <div style={buttonContainerStyle}>
-          <button 
-            style={primaryButtonStyle} 
-            onClick={() => navigate('/shop')}
-          >
-            🛒 فروشگاه Pi
+
+        <div style={styles.buttonGroup}>
+          <button style={{...styles.button, ...styles.primaryBtn}} onClick={() => navigate('/shop')}>
+            🛒 فروشگاه و محصولات
           </button>
-          <button 
-            style={secondaryButtonStyle} 
-            onClick={() => navigate('/tasks')}
-          >
+          <button style={{...styles.button, ...styles.secondaryBtn}} onClick={() => navigate('/tasks')}>
             🎯 ماموریت‌ها و پاداش‌ها
+          </button>
+          <button style={{...styles.button, ...styles.secondaryBtn}} onClick={() => navigate('/signin')}>
+            🔐 ورود با کیف پول Pi
           </button>
         </div>
 
-        <div style={{ marginTop: '40px', fontSize: '14px', opacity: 0.6 }}>
-          Powered by Pi Network Ecosystem
+        <div style={styles.footer}>
+          © 2026 Pi Network Developer Project
         </div>
       </div>
     </div>
