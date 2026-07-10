@@ -3,14 +3,14 @@
     "target": "ESNext",
     "useDefineForClassFields": true,
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
-    "allowJs": true,                /* تغییر از false به true برای پذیرش فایل‌های JS/JSX */
+    "allowJs": false,
     "skipLibCheck": true,
-    "esModuleInterop": true,         /* تغییر از false به true برای سازگاری بهتر با پکیج‌ها */
+    "esModuleInterop": false,
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "module": "ESNext",
-    "moduleResolution": "bundler",   /* تغییر از Node به bundler (استاندارد جدید Vite) */
+    "moduleResolution": "Bundler", // تغییر از Node به Bundler
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
