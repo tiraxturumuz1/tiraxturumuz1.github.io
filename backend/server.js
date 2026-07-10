@@ -4,12 +4,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const { PrismaClient } = require('@prisma/client');
 
-// وارد کردن مسیرها (Routes)
-const authRoutes = require('./routes/auth');
-const paymentRoutes = require('./routes/payment');
-const adminRoutes = require('./routes/admin');
-
-// بارگذاری متغیرهای محیطی
+// بارگذاری متغیرهای محیطی از فایل .env
 dotenv.config();
 
 const app = express();
@@ -17,42 +12,42 @@ const prisma = new PrismaClient();
 
 // Middlewareها
 app.use(express.json());
-app.use(cors()); // در محیط Production محدودتر کنید
+app.use(cors());
 
-// --- ثبت مسیرهای API (Routing) ---
+// --- تعریف مسیرهای API ---
 
-// مسیرهای احراز هویت (لاگین با Pi و دریافت پروفایل)
-// این مسیرها با requests فرانت‌اند در useAuth.ts هماهنگ هستند
+// نکته: مطمئن شوید در فایل‌های auth.js و payment.js 
+// به جای require('../models/User') از استفاده مستقیم از prisma استفاده می‌کنید.
+const authRoutes = require('./routes/auth');
+const paymentRoutes = require('./routes/payment');
+const adminRoutes = require('./routes/admin');
+
 app.use('/api/auth', authRoutes);
-
-// مسیرهای پرداخت (ایجاد تراکنش و تاریخچه)
 app.use('/api/payment', paymentRoutes);
-
-// مسیرهای مدیریت (آمار و لیست تراکنش‌ها برای ادمین)
 app.use('/api/admin', adminRoutes);
 
-// --- مسیرهای تست و سلامت (Health Checks) ---
+// --- مسیر تست سلامت (Health Check) ---
 
 app.get('/health', async (req, res) => {
   try {
-    // تست اتصال به دیتابیس با یک کوئری ساده
+    // تست اتصال به PostgreSQL با یک کوئری ساده
     await prisma.$queryRaw`SELECT 1`;
     res.status(200).json({ 
       status: 'OK', 
-      message: 'Server is running and connected to PostgreSQL' 
+      message: 'Server is running and connected to PostgreSQL via Prisma' 
     });
   } catch (error) {
-    console.error("Health Check Error:", error);
+    console.error("Database Connection Error:", error);
     res.status(500).json({ 
       status: 'ERROR', 
-      message: 'Database connection failed' 
+      message: 'Database connection failed. Check your DATABASE_URL in .env' 
     });
   }
 });
 
-// مدیریت خطاهای عمومی برای جلوگیری از کرش کردن سرور
+// مدیریت خطاهای عمومی
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error("Unhandled Error:", err.stack);
   res.status(500).json({ 
     success: false, 
     message: 'Something went wrong on the server!' 
@@ -65,6 +60,12 @@ app.listen(PORT, () => {
   console.log(`==========================================`);
   console.log(`🚀 Server is running on port ${PORT}`);
   console.log(`🔗 API Base URL: http://localhost:${PORT}/api`);
-  console.log(` Database: PostgreSQL (via Prisma)`);
+  console.log(`✅ Database: PostgreSQL (Prisma ORM)`);
   console.log(`==========================================`);
+});
+
+// بستن اتصال Prisma هنگام خاموش شدن سرور
+process.on('SIGINT', async () => {
+  await prisma.$disconnect();
+  process.exit(0);
 });
