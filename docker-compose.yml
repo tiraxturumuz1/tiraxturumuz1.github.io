@@ -21,24 +21,28 @@ services:
       - postgres
     networks:
       - pi_network
+    # در اینجا پورت 5000 داخلی است. 
+    # اگر بخواهید از بیرون هم به بک دسترسی داشته باشید، می‌توانید مپ کنید:
+    # ports:
+    #   - "5001:5000" 
 
   frontend:
     build: ./frontend
     restart: always
-    # پورت 3000 را اینجا نگه می‌داریم چون در vite.config تنظیم کردیم
+    # مپ کردن پورت 5000 داخلی به 3000 خارجی برای تست راحت‌تر در مرورگر
     ports:
-      - "3000:3000"
+      - "3000:5000" 
     networks:
       - pi_network
 
   reverse-proxy:
     build: ./reverse-proxy
     restart: always
+    environment:
+      - DOMAIN_NAME=localhost
     ports:
       - "80:80"
       - "443:443"
-    environment:
-      - DOMAIN_NAME=localhost # در حالت عملیاتی آدرس دامنه را اینجا بنویسید
     depends_on:
       - backend
       - frontend
