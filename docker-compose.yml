@@ -39,7 +39,7 @@ services:
     build: ./reverse-proxy
     restart: always
     environment:
-      - DOMAIN_NAME=localhost
+      - DOMAIN_NAME=apppidaonkm2562.pinet.com
     ports:
       - "80:80"
       - "443:443"
