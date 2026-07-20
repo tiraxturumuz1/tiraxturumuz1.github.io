@@ -1,10 +1,25 @@
 version: '3.8'
 
 services:
+  # اضافه کردن سرویس دیتابیس
+  postgres:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: pidao_db
+    networks:
+      - pi_network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
   backend:
     build: ./backend
     restart: always
     env_file: ./backend/.env
+    depends_on:
+      - postgres # صبر کن تا دیتابیس بالا بیاید
     networks:
       - pi_network
 
@@ -13,8 +28,6 @@ services:
     restart: always
     ports:
       - "3000:3000"
-    depends_on:
-      - backend
     networks:
       - pi_network
 
@@ -24,9 +37,6 @@ services:
     ports:
       - "80:80"
       - "443:443"
-    volumes:
-      - ./reverse-proxy/docker/nginx.conf.template:/etc/nginx/templates/nginx.conf.template
-      - ./certbot/conf:/etc/letsencrypt
     depends_on:
       - backend
       - frontend
@@ -36,3 +46,6 @@ services:
 networks:
   pi_network:
     driver: bridge
+
+volumes:
+  postgres_data:
