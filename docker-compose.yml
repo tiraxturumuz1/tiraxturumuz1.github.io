@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  # اضافه کردن سرویس دیتابیس
   postgres:
     image: postgres:16
     restart: always
@@ -19,13 +18,14 @@ services:
     restart: always
     env_file: ./backend/.env
     depends_on:
-      - postgres # صبر کن تا دیتابیس بالا بیاید
+      - postgres
     networks:
       - pi_network
 
   frontend:
     build: ./frontend
     restart: always
+    # پورت 3000 را اینجا نگه می‌داریم چون در vite.config تنظیم کردیم
     ports:
       - "3000:3000"
     networks:
@@ -37,6 +37,8 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    environment:
+      - DOMAIN_NAME=localhost # در حالت عملیاتی آدرس دامنه را اینجا بنویسید
     depends_on:
       - backend
       - frontend
