@@ -201,6 +201,7 @@ app.use((req, res, next) => {
 
 const defaultAllowedOrigins = [
   'https://tiraxturumuz1.github.io',
+  'https://dao4388.pinet.com',
   'https://apppidaonkm2562.pinet.com',
   'https://pidao.bonto.run',
   'https://sandbox.minepi.com',
